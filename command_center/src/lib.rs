@@ -1,4 +1,4 @@
-use crate::kinode::process::stt::{SttRequest, SttResponse, register_api_key};
+use crate::kinode::process::stt::{SttRequest, SttResponse, register_api_key, openai_transcribe};
 use kinode_process_lib::{await_message, call_init, println, Address, Message, Response, Request};
 
 wit_bindgen::generate!({
@@ -9,25 +9,12 @@ wit_bindgen::generate!({
 });
 
 
-// fn test() -> anyhow::Result<()> {
-//     let SttResponse::RegisterApiKey(result) = Request::new()
-//         .target(("our", "stt", "command_center", "uncentered.os"))
-//         .body(SttRequest::RegisterApiKey("test".to_string()))
-//         .send_and_await_response(5)??
-//         .body()
-//         .try_into()?
-//     else {
-//         println!("IT'S PANIC TIME KYLE");
-//         return Err(anyhow::anyhow!("IT'S PANIC TIME KYLE"));
-//     };
-
-//     println!("Result is going to be {:?}", result);
-
-//     Ok(())
-// }
-
 fn test() -> anyhow::Result<()> {
-    let result = register_api_key("test");
+    let result = register_api_key("u no taek key");
+    println!("Result is going to be {:?}", result);
+
+    let audio = vec![0; 1024];
+    let result = openai_transcribe(&audio);
     println!("Result is going to be {:?}", result);
 
     Ok(())

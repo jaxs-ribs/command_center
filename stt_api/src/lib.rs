@@ -22,6 +22,19 @@ fn register_api_key(key: String) -> anyhow::Result<Result<String, String>> {
     Ok(result)
 }
 
+fn openai_transcribe(audio: Vec<u8>) -> anyhow::Result<Result<String, String>> {
+    let SttResponse::OpenaiTranscribe(result) = Request::new()
+        .target(("our", "stt", "command_center", "uncentered.os"))
+        .body(SttRequest::OpenaiTranscribe(audio))
+        .send_and_await_response(5)??
+        .body()
+        .try_into()?
+    else {
+        return Err(anyhow::anyhow!("Failed to transcribe audio"));
+    };
+    Ok(result)
+}
+
 struct Api;
 impl Guest for Api {
     fn register_api_key(key: String) -> Result<String, String> {
@@ -32,7 +45,10 @@ impl Guest for Api {
     }
 
     fn openai_transcribe(audio: Vec<u8>) -> Result<String, String> {
-        todo!()
+        match openai_transcribe(audio) {
+            Ok(result) => result,
+            Err(e) => Err(format!("{e:?}")),
+        }
     }
 }
 export!(Api);
