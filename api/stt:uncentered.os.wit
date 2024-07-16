@@ -8,6 +8,16 @@ interface stt {
         register-api-key(result<string, string>),
         openai-transcribe(result<string, string>),
     }
+
+    /// register-api-key() registers the given key as the new key. 
+    /// Necessary before making any other calls, as those use the api key
+    /// under the hood.
+    register-api-key: func(key: string) -> result<string, string>;
+
+    /// openai-transcribe() takes a list of bytes representing an audio file
+    /// and returns a transcription of the audio using OpenAI's Whisper model.
+    /// An API key must be registered first using register-api-key().
+    openai-transcribe: func(audio: list<u8>) -> result<string, string>;
 }
 
 world stt-uncentered-dot-os-api-v0 {

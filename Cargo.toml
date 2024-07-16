@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "command_center",
     "stt",
+    "stt_api",
 ]
 
 [profile.release]
