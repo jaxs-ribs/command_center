@@ -8,7 +8,7 @@ wit_bindgen::generate!({
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
 
-// TODO: Zena: Should we maybe activate inherit(true) and explicitly send a response on fail?
+// TODO: Zena: Should we activate inherit(true) and explicitly send a response on fail?
 fn register_api_key(key: String) -> anyhow::Result<Result<String, String>> {
     let SttResponse::RegisterApiKey(result) = Request::new()
         .target(("our", "stt", "command_center", "uncentered.os"))
