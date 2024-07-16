@@ -10,7 +10,7 @@ mod tester_lib;
 
 wit_bindgen::generate!({
     path: "target/wit",
-    world: "command-center-test-template-dot-os-v0",
+    world: "command-center-test-uncentered-dot-os-v0",
     generate_unused_types: true,
     additional_derives: [PartialEq, serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
@@ -37,7 +37,7 @@ fn handle_message(our: &Address) -> anyhow::Result<()> {
 
     let our_echo_address = Address {
         node: our.node.clone(),
-        process: ProcessId::new(Some("command_center"), "command_center", "template.os"),
+        process: ProcessId::new(Some("command_center"), "command_center", "uncentered.os"),
     };
 
     // Send

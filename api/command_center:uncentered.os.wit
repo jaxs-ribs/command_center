@@ -1,0 +1,3 @@
+world command-center-uncentered-dot-os-v0 {
+    include process-v0;
+}
