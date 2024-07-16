@@ -4,6 +4,7 @@ members = [
     "command_center",
     "stt",
     "stt_api",
+    "llm",
 ]
 
 [profile.release]
