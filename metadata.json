@@ -1,0 +1,18 @@
+{
+    "name": "command_center",
+    "description": "",
+    "image": "",
+    "properties": {
+        "package_name": "command_center",
+        "current_version": "0.1.0",
+        "publisher": "template.os",
+        "mirrors": [],
+        "code_hashes": {
+            "0.1.0": ""
+        },
+        "wit_version": 0,
+        "dependencies": ["stt:appattacc.os"]
+    },
+    "external_url": "",
+    "animation_url": ""
+}

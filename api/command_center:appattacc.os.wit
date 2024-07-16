@@ -1,0 +1,4 @@
+world command-center-appattacc-dot-os-v0 {
+    import stt;
+    include process-v0;
+}

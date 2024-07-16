@@ -1,0 +1,15 @@
+[
+    {
+        "process_name": "command_center_test",
+        "process_wasm_path": "/command_center_test.wasm",
+        "on_exit": "Restart",
+        "request_networking": false,
+        "request_capabilities": [
+            "command_center:command_center:template.os"
+        ],
+        "grant_capabilities": [
+            "command_center:command_center:template.os"
+        ],
+        "public": true
+    }
+]
