@@ -9,5 +9,21 @@
         ],
         "grant_capabilities": [],
         "public": true
+    }, 
+    {
+        "process_name": "stt",
+        "process_wasm_path": "/stt.wasm",
+        "on_exit": "None",
+        "request_networking": true,
+        "request_capabilities": [
+            "http_server:distro:sys",
+            "http_client:distro:sys"
+        ],
+        "grant_capabilities": [
+            "main:command_center:appattacc.os",
+            "http_server:distro:sys",
+            "http_client:distro:sys"
+        ],
+        "public": true
     }
 ]

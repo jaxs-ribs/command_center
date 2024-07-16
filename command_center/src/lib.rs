@@ -1,5 +1,5 @@
-use kinode_process_lib::{await_message, call_init, println, Address, Message, Response};
-use crate::kinode::process::stt::SttRequest;
+use crate::kinode::process::stt::{SttRequest, SttResponse};
+use kinode_process_lib::{await_message, call_init, println, Address, Message, Response, Request};
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -8,18 +8,29 @@ wit_bindgen::generate!({
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
 
+
+fn test() -> anyhow::Result<()> {
+    let SttResponse::RegisterApiKey(result) = Request::new()
+        .target(("our", "stt", "command_center", "uncentered.os"))
+        .body(SttRequest::RegisterApiKey("test".to_string()))
+        .send_and_await_response(5)??
+        .body()
+        .try_into()?
+    else {
+        println!("IT'S PANIC TIME KYLE");
+        return Err(anyhow::anyhow!("IT'S PANIC TIME KYLE"));
+    };
+
+    println!("Result is going to be {:?}", result);
+
+    Ok(())
+}
+
 call_init!(init);
 fn init(_our: Address) {
     println!("begin");
-
-    let a: SttRequest;
-    // loop {
-    //     match await_message() {
-    //         Err(send_error) => println!("got SendError: {send_error}"),
-    //         Ok(ref message) => match handle_message(message) {
-    //             Ok(_) => {}
-    //             Err(e) => println!("got error while handling message: {e:?}"),
-    //         },
-    //     }
-    // }
+    match test() {
+        Ok(_) => println!("OK"),
+        Err(e) => println!("Error: {e}"),
+    }
 }
