@@ -164,11 +164,10 @@ interface llm {
     register-openai-api-key: func(key: string) -> result<string, string>;
     register-groq-api-key: func(key: string) -> result<string, string>;
     register-claude-api-key: func(key: string) -> result<string, string>;
-    embedding: func(request: embedding-request) -> result<embedding-response, string>;
-    openai-chat: func(request: chat-request) -> result<chat-response, string>;
-    groq-chat: func(request: chat-request) -> result<chat-response, string>;
-    chat-image: func(request: chat-image-request) -> result<chat-response, string>;
-    claude-chat: func(request: claude-chat-request) -> result<claude-chat-response, string>;
+    embedding: func(input: string, model: option<string>) -> result<string, string>;
+    openai-chat: func(input: string, model: option<string>) -> result<string, string>;
+    groq-chat: func(input: string, model: option<string>) -> result<string, string>;
+    claude-chat: func(input: string, moel: option<string>) -> result<string, string>;
 }
 
 world llm-uncentered-dot-os-api-v0 {
