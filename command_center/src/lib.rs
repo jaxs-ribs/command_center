@@ -20,55 +20,49 @@ fn stt() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn llm() -> anyhow::Result<()> {
-    // register openai
-    println!("Starting");
-    let LlmResponse::RegisterOpenaiApiKey(result) = Request::new()
+fn _register_openai_api_key(api_key: &str) -> anyhow::Result<String> {
+    let LlmResponse::RegisterOpenaiApiKey(Ok(result)) = Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
-        .body(LlmRequest::RegisterOpenaiApiKey(
-            "sk-proj-J2y0MMBBYhLaw6iI680bT3BlbkFJPeH4fI3cumGNe6M6mbLX".to_string(),
-        ))
+        .body(LlmRequest::RegisterOpenaiApiKey(api_key.to_string()))
         .send_and_await_response(5)??
         .body()
         .try_into()?
     else {
         return Err(anyhow::anyhow!("Failed to register OpenAI API key: unexpected response"));
     };
-    println!("openai result: {:?}", result);
-    println!("-----------------");
+    Ok(result)
+}
 
-    // register groq
-    let LlmResponse::RegisterGroqApiKey(result) = Request::new()
+fn _register_groq_api_key(api_key: &str) -> anyhow::Result<String> {
+    let LlmResponse::RegisterGroqApiKey(Ok(result)) = Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
-        .body(LlmRequest::RegisterGroqApiKey(
-            "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".to_string(),
-        ))
+        .body(LlmRequest::RegisterGroqApiKey(api_key.to_string()))
         .send_and_await_response(5)??
         .body()
         .try_into()?
     else {
         return Err(anyhow::anyhow!("Failed to register Groq API key: unexpected response"));
     };
-    println!("groq result: {:?}", result);
-    println!("-----------------");
+    Ok(result)
+}
 
-    // register claude
-    let LlmResponse::RegisterClaudeApiKey(result) = Request::new()
+fn _register_claude_api_key(api_key: &str) -> anyhow::Result<String> {
+    let LlmResponse::RegisterClaudeApiKey(Ok(result)) = Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
-        .body(LlmRequest::RegisterClaudeApiKey("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".to_string()))
+        .body(LlmRequest::RegisterClaudeApiKey(api_key.to_string()))
         .send_and_await_response(5)??
         .body()
         .try_into()?
     else {
         return Err(anyhow::anyhow!("Failed to register Claude API key: unexpected response"));
     };
-    println!("claude result: {:?}", result);
-    println!("-----------------");
+    Ok(result)
+}
 
-    // Call the embedding method for openai
+fn _get_embedding(input: &str, model: Option<&str>) -> anyhow::Result<Vec<f32>> {
     let embedding_request = EmbeddingRequest {
-        model: "text-embedding-3-large".to_string(),
-        input: vec!["this is an embedding test".to_string()],
+        model: model.unwrap_or("text-embedding-3-large").to_string(),
+        input: vec![input.to_string()],
     };
     let LlmResponse::Embedding(Ok(result)) = Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
@@ -79,20 +73,16 @@ fn llm() -> anyhow::Result<()> {
     else {
         return Err(anyhow::anyhow!("Failed to get embedding: unexpected response"));
     };
-    println!("Embedding result len with openai: {:?}", result.embeddings[0].len());
-    println!("-----------------");
+    Ok(result.embeddings[0].clone())
+}
 
-    // Call the chat method for openai
+fn _openai_chat(input: &str, model: Option<&str>) -> anyhow::Result<String> {
     let chat_request = ChatRequest {
-        model: "gpt-3.5-turbo".to_string(),
+        model: model.unwrap_or("gpt-3.5-turbo").to_string(),
         messages: vec![
             LlmMessage {
-                role: "system".to_string(),
-                content: "You are a helpful assistant.".to_string(),
-            },
-            LlmMessage {
                 role: "user".to_string(),
-                content: "What is the capital of France?".to_string(),
+                content: input.to_string(),
             },
         ],
         frequency_penalty: None,
@@ -111,9 +101,8 @@ fn llm() -> anyhow::Result<()> {
         tools: None,
         tool_choice: None,
         user: None,
-        
     };
-    let LlmResponse::OpenaiChat(result) = Request::new()
+    let LlmResponse::OpenaiChat(Ok(result)) = Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
         .body(LlmRequest::OpenaiChat(chat_request))
         .send_and_await_response(20)??
@@ -122,20 +111,16 @@ fn llm() -> anyhow::Result<()> {
     else {
         return Err(anyhow::anyhow!("Failed to get OpenAI chat response: unexpected response"));
     };
-    println!("Openai chat result: {:?}", result);
-    println!("-----------------");
+    Ok(result.choices[0].message.content.clone())
+}
 
-    // Call the chat method for groq
+fn _groq_chat(input: &str, model: Option<&str>) -> anyhow::Result<String> {
     let chat_request = ChatRequest {
-        model: "llama3-8b-8192".to_string(),
+        model: model.unwrap_or("llama3-8b-8192").to_string(),
         messages: vec![
             LlmMessage {
-                role: "system".to_string(),
-                content: "You are a helpful assistant.".to_string(),
-            },
-            LlmMessage {
                 role: "user".to_string(),
-                content: "What is the capital of Germany?".to_string(),
+                content: input.to_string(),
             },
         ],
         frequency_penalty: None,
@@ -154,9 +139,8 @@ fn llm() -> anyhow::Result<()> {
         tools: None,
         tool_choice: None,
         user: None,
-        
     };
-    let LlmResponse::GroqChat(result) = Request::new()
+    let LlmResponse::GroqChat(Ok(result)) = Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
         .body(LlmRequest::GroqChat(chat_request))
         .send_and_await_response(20)??
@@ -165,21 +149,21 @@ fn llm() -> anyhow::Result<()> {
     else {
         return Err(anyhow::anyhow!("Failed to get Groq chat response: unexpected response"));
     };
-    println!("Groq chat result: {:?}", result);
-    println!("-----------------");
+    Ok(result.choices[0].message.content.clone())
+}
 
-    // Call the chat method for claude
+fn _claude_chat(input: &str, model: Option<&str>) -> anyhow::Result<String> {
     let claude_chat_request = ClaudeChatRequest {
-        model: "claude-3-5-sonnet-20240620".to_string(),
+        model: model.unwrap_or("claude-3-5-sonnet-20240620").to_string(),
         messages: vec![
             LlmMessage {
                 role: "user".to_string(),
-                content: "What is the capital of Germany?".to_string(),
+                content: input.to_string(),
             },
         ],
         max_tokens: Some(512),
     };
-    let LlmResponse::ClaudeChat(result) = Request::new()
+    let LlmResponse::ClaudeChat(Ok(result)) = Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
         .body(LlmRequest::ClaudeChat(claude_chat_request))
         .send_and_await_response(20)??
@@ -188,8 +172,27 @@ fn llm() -> anyhow::Result<()> {
     else {
         return Err(anyhow::anyhow!("Failed to get Claude chat response: unexpected response"));
     };
-    println!("Claude chat result: {:?}", result);
-    println!("-----------------");
+    Ok(result.content[0].text.clone())
+}
+
+// Update the llm() function to demonstrate the use of optional model parameters
+fn llm() -> anyhow::Result<()> {
+    println!("Starting");
+
+    // Register API keys
+    println!("OpenAI API key registered: {:?}", _register_openai_api_key("sk-proj-J2y0MMBBYhLaw6iI680bT3BlbkFJPeH4fI3cumGNe6M6mbLX")?);
+    println!("Groq API key registered: {:?}", _register_groq_api_key("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")?);
+    println!("Claude API key registered: {:?}", _register_claude_api_key("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")?);
+
+    // Get embedding
+    let embedding = _get_embedding("this is an embedding test", None)?;
+    println!("Embedding result len: {}", embedding.len());
+
+    // Chat with different models
+    println!("OpenAI chat result (default model): {}", _openai_chat("What is the capital of France?", None)?);
+    println!("OpenAI chat result (GPT-4): {}", _openai_chat("What is the capital of France?", Some("gpt-4"))?);
+    println!("Groq chat result (default model): {}", _groq_chat("What is the capital of Germany?", None)?);
+    println!("Claude chat result (default model): {}", _claude_chat("What is the capital of Japan?", None)?);
 
     Ok(())
 }

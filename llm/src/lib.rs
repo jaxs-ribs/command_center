@@ -119,10 +119,7 @@ fn handle_claude_chat_response() -> anyhow::Result<()> {
             return Err(e.into());
         }
     };
-    println!("Chat response wrapper is {:?}", chat_response_wrapper);
     let chat_response = ClaudeChatResponse::from(chat_response_wrapper);
-    println!("Chat response is {:?}", chat_response);
-
     let llm_response = LlmResponse::ClaudeChat(Ok(chat_response));
     Response::new()
         .body(serde_json::to_vec(&llm_response)?)
