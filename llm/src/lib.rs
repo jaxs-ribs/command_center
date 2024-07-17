@@ -1,146 +1,247 @@
-// use std::collections::HashMap;
+use crate::kinode::process::llm::{
+    ChatResponse, ClaudeChatResponse, LlmRequest, LlmResponse, 
+};
+use anyhow::Context;
+use kinode_process_lib::{
+    await_message, call_init, get_blob,
+    http::{HttpClientAction, OutgoingHttpRequest},
+    println, Address, LazyLoadBlob, ProcessId, Request, Response,
+};
+use serde::Serialize;
+use std::{collections::HashMap, vec};
+use std::fmt::Debug;
 
-// use crate::kinode::process::stt::{SttRequest, SttResponse};
-// use kinode_process_lib::{
-//     await_message, call_init, get_blob, println, Address, Message, Request,
-//     Response, http::{self, HttpClientAction, OutgoingHttpRequest},
-// };
+mod structs;
+use structs::State;
 
-// pub const BASE_URL: &str = "https://api.openai.com/v1/audio/transcriptions";
+mod helpers;
+use helpers::*;
 
-// mod structs;
-// use structs::*;
+pub const OPENAI_BASE_URL: &str = "https://api.openai.com/v1";
+pub const GROQ_BASE_URL: &str = "https://api.groq.com/openai/v1";
+pub const CLAUDE_BASE_URL: &str = "https://api.anthropic.com/v1";
 
-// wit_bindgen::generate!({
-//     path: "target/wit",
-//     world: "stt-uncentered-dot-os-v0",
-//     generate_unused_types: true,
-//     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
-// });
+wit_bindgen::generate!({
+    path: "target/wit",
+    world: "llm-uncentered-dot-os-v0",
+    generate_unused_types: true,
+    additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
+});
 
-// // TODO: Zena: Can't find a crate that does this in rust-wasm-wasi,
-// // will just rewrite this process in js once support is there. 
-// // This works, it's just ugly. 
-// pub fn openai_whisper_request(audio_bytes: &[u8], openai_key: &str) -> anyhow::Result<()> {
-//     let boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
-//     let content_type = format!("multipart/form-data; boundary={}", boundary);
-//     let headers = Some(HashMap::from_iter(vec![
-//         ("Content-Type".to_string(), content_type),
-//         (
-//             "Authorization".to_string(),
-//             format!("Bearer {}", openai_key),
-//         ),
-//     ]));
-//     let url = url::Url::parse(BASE_URL).unwrap();
+enum ApiKeyType {
+    OpenAI,
+    Groq,
+    Claude,
+}
 
-//     let mut body = Vec::new();
-//     body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-//     body.extend_from_slice(
-//         b"Content-Disposition: form-data; name=\"file\"; filename=\"audio.oga\"\r\n",
-//     );
-//     body.extend_from_slice(b"Content-Type: application/octet-stream\r\n\r\n");
-//     body.extend_from_slice(audio_bytes);
-//     body.extend_from_slice(b"\r\n");
+fn handle_response(context: &[u8]) -> anyhow::Result<()> {
+    match context[0] {
+        EMBEDDING_CONTEXT => handle_embedding_response()?,
+        OPENAI_CHAT_CONTEXT => handle_chat_response::<ChatResponse, _>(LlmResponse::OpenaiChat)?,
+        GROQ_CHAT_CONTEXT => handle_chat_response::<ChatResponse, _>(LlmResponse::GroqChat)?,
+        CHAT_IMAGE_CONTEXT => handle_chat_response::<ChatResponse, _>(LlmResponse::ChatImage)?,
+        CLAUDE_CHAT_CONTEXT => {
+            handle_chat_response::<ClaudeChatResponse, _>(LlmResponse::ClaudeChat)?
+        }
+        _ => {}
+    }
 
-//     body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-//     body.extend_from_slice(b"Content-Disposition: form-data; name=\"model\"\r\n\r\n");
-//     body.extend_from_slice(b"whisper-1\r\n");
+    Ok(())
+}
 
-//     body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
+fn handle_chat_response<T, F>(response_wrapper: F) -> anyhow::Result<()>
+where
+    T: serde::de::DeserializeOwned + Debug,
+    F: FnOnce(Result<T, String>) -> LlmResponse,
+{
+    let bytes = get_blob().context("Couldn't get blob")?;
+    let chat_response = match serde_json::from_slice::<T>(bytes.bytes.as_slice()) {
+        Ok(response) => response,
+        Err(e) => {
+            println!(
+                "Failed to deserialize response. Raw bytes: {:?}",
+                String::from_utf8_lossy(&bytes.bytes)
+            );
+            return Err(e.into());
+        }
+    };
 
-//     Request::to(("our", "http_client", "distro", "sys"))
-//         .body(
-//             serde_json::to_vec(&HttpClientAction::Http(OutgoingHttpRequest {
-//                 method: http::Method::POST.to_string(),
-//                 version: None,
-//                 url: url.to_string(),
-//                 headers: headers.unwrap_or_default(),
-//             }))
-//             .unwrap(),
-//         )
-//         .blob_bytes(body)
-//         .expects_response(30)
-//         .send()
-// }
+    let llm_response = response_wrapper(Ok(chat_response));
+    Response::new()
+        .body(serde_json::to_vec(&llm_response)?)
+        .send()?;
+    Ok(())
+}
 
-// fn register_openai_api_key(api_key: &str, state: &mut Option<State>) -> anyhow::Result<()> {
-//     match state {
-//         Some(_state) => {
-//             _state.openai_api_key = api_key.to_string();
-//             _state.save();
-//         }
-//         None => {
-//             let _state = State {
-//                 openai_api_key: api_key.to_string(),
-//             };
-//             _state.save();
-//             *state = Some(_state);
-//         }
-//     }
-//     let _ = Response::new()
-//         .body(serde_json::to_vec(&SttResponse::RegisterApiKey(Ok(
-//             "Success".to_string(),
-//         )))?)
-//         .send();
-//     Ok(())
-// }
+fn handle_embedding_response() -> anyhow::Result<()> {
+    let bytes = get_blob().context("Couldn't get blob")?;
+    let openai_embedding =
+        serde_json::from_slice::<OpenAiEmbeddingResponse>(bytes.bytes.as_slice())?;
+    let embedding = openai_embedding.to_embedding_response();
+    let response = LlmResponse::Embedding(Ok(embedding));
+    let _ = Response::new().body(serde_json::to_vec(&response)?).send();
+    Ok(())
+}
 
-// fn handle_message(state: &mut Option<State>) -> anyhow::Result<()> {
-//     let msg = await_message()?;
-//     match msg {
-//         Message::Request { body, .. } => handle_request(state, &body),
-//         Message::Response { .. } => {
-//             // No need for context numbers, as there is only one response type to handle.
-//             handle_openai_whisper_response()
-//         }
-//     }
-// }
+fn handle_request(body: &[u8], state: &mut Option<State>) -> anyhow::Result<()> {
+    let request = serde_json::from_slice::<LlmRequest>(body)?;
+    let context = request_to_context(&request);
+    match &request {
+        LlmRequest::RegisterOpenaiApiKey(api_request) => {
+            register_api_key(api_request, state, ApiKeyType::OpenAI)
+        }
+        LlmRequest::RegisterGroqApiKey(api_request) => {
+            register_api_key(api_request, state, ApiKeyType::Groq)
+        }
+        LlmRequest::RegisterClaudeApiKey(api_request) => {
+            register_api_key(api_request, state, ApiKeyType::Claude)
+        }
+        LlmRequest::Embedding(embedding_request) => {
+            let endpoint = format!("{}/embeddings", OPENAI_BASE_URL);
+            handle_generic_request(embedding_request, state, context, &endpoint)
+        }
+        LlmRequest::OpenaiChat(chat_request) => {
+            let endpoint = format!("{}/chat/completions", OPENAI_BASE_URL);
+            handle_generic_request(chat_request, state, context, &endpoint)
+        }
+        LlmRequest::GroqChat(chat_request) => {
+            let endpoint = format!("{}/chat/completions", GROQ_BASE_URL);
+            handle_generic_request(chat_request, state, context, &endpoint)
+        }
+        LlmRequest::ChatImage(chat_image_request) => {
+            let endpoint = format!("{}/chat/completions", OPENAI_BASE_URL);
+            handle_generic_request(chat_image_request, state, context, &endpoint)
+        }
+        LlmRequest::ClaudeChat(chat_request) => {
+            let endpoint = format!("{}/messages", CLAUDE_BASE_URL);
+            handle_generic_request(chat_request, state, context, &endpoint)
+        }
+    }
+}
 
-// fn handle_request(state: &mut Option<State>, body: &[u8]) -> anyhow::Result<()> {
-//     let stt_request = serde_json::from_slice::<SttRequest>(&body)?;
-//     match stt_request {
-//         SttRequest::RegisterApiKey(key) => {
-//             return register_openai_api_key(&key, state);
-//         }
-//         SttRequest::OpenaiTranscribe(audio_data) => match state {
-//             Some(state) => return openai_whisper_request(&audio_data, &state.openai_api_key),
-//             None => {
-//                 return Err(anyhow::anyhow!("No API key registered"));
-//             }
-//         },
-//     }
-// }
+fn register_api_key(
+    api_key: &str,
+    state: &mut Option<State>,
+    key_type: ApiKeyType,
+) -> anyhow::Result<()> {
+    let response = match state {
+        Some(_state) => {
+            match key_type {
+                ApiKeyType::OpenAI => _state.openai_api_key = api_key.to_string(),
+                ApiKeyType::Groq => _state.groq_api_key = api_key.to_string(),
+                ApiKeyType::Claude => _state.claude_api_key = api_key.to_string(),
+            }
+            _state.save();
+            Ok("API key registered successfully".to_string())
+        }
+        None => {
+            let mut _state = State::default();
+            match key_type {
+                ApiKeyType::OpenAI => _state.openai_api_key = api_key.to_string(),
+                ApiKeyType::Groq => _state.groq_api_key = api_key.to_string(),
+                ApiKeyType::Claude => _state.claude_api_key = api_key.to_string(),
+            }
+            _state.save();
+            *state = Some(_state);
+            Ok("API key registered successfully".to_string())
+        }
+    };
 
-// pub fn handle_openai_whisper_response() -> anyhow::Result<()> {
-//     let Some(blob) = get_blob() else {
-//         return Err(anyhow::anyhow!("Failed to get blob!"));
-//     };
+    let llm_response = match key_type {
+        ApiKeyType::OpenAI => LlmResponse::RegisterOpenaiApiKey(response),
+        ApiKeyType::Groq => LlmResponse::RegisterGroqApiKey(response),
+        ApiKeyType::Claude => LlmResponse::RegisterClaudeApiKey(response),
+    };
 
-//     let bytes = blob.bytes;
-//     let response = match serde_json::from_slice::<WhisperResponse>(bytes.as_slice()) {
-//         Ok(response) => SttResponse::OpenaiTranscribe(Ok(response.text)),
-//         Err(e) => {
-//             let error_message = e.to_string();
-//             match String::from_utf8(bytes.to_vec()) {
-//                 Ok(decoded) => SttResponse::OpenaiTranscribe(Err(format!("{}: {}", error_message, decoded))),
-//                 Err(_) => SttResponse::OpenaiTranscribe(Err(error_message)),
-//             }
-//         },
-//     };
+    Response::new()
+        .body(serde_json::to_vec(&llm_response)?)
+        .send()?;
 
-//     let body = serde_json::to_vec(&response)?;
-//     Response::new().body(body).send()
-// }
+    Ok(())
+}
 
-// call_init!(init);
-// fn init(_: Address) {
-//     println!("Start");
-//     let mut state = State::fetch();
+fn handle_generic_request<T: Serialize>(
+    request_data: &T,
+    state: &mut Option<State>,
+    context: u8,
+    endpoint: &str,
+) -> anyhow::Result<()> {
+    let api_key = match context {
+        OPENAI_CHAT_CONTEXT | EMBEDDING_CONTEXT | CHAT_IMAGE_CONTEXT => state
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("State not initialized"))?
+            .openai_api_key
+            .clone(),
+        GROQ_CHAT_CONTEXT => state
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("State not initialized"))?
+            .groq_api_key
+            .clone(),
+        CLAUDE_CHAT_CONTEXT => state
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("State not initialized"))?
+            .claude_api_key
+            .clone(),
+        _ => return Err(anyhow::anyhow!("Invalid context for API key")),
+    };
+    let headers = match context {
+        CLAUDE_CHAT_CONTEXT => HashMap::from_iter(vec![
+            ("Content-Type".to_string(), "application/json".to_string()),
+            ("x-api-key".to_string(), api_key),
+            ("anthropic-version".to_string(), "2023-06-01".to_string()),
+        ]),
+        _ => HashMap::from_iter(vec![
+            ("Content-Type".to_string(), "application/json".to_string()),
+            ("Authorization".to_string(), format!("Bearer {}", api_key)),
+        ]),
+    };
+    let outgoing_request = OutgoingHttpRequest {
+        method: "POST".to_string(),
+        version: None,
+        url: endpoint.to_string(),
+        headers,
+    };
+    let body = serde_json::to_vec(&HttpClientAction::Http(outgoing_request))?;
+    let bytes = serialize_without_none(request_data)?;
+    Request::new()
+        .target(Address::new(
+            "our",
+            ProcessId::new(Some("http_client"), "distro", "sys"),
+        ))
+        .body(body)
+        .expects_response(60)
+        .context(vec![context])
+        .blob(LazyLoadBlob {
+            mime: Some("application/json".to_string()),
+            bytes,
+        })
+        .send()?;
 
-//     loop {
-//         match handle_message(&mut state) {
-//             Ok(_) => {}
-//             Err(e) => println!("got error while handling message: {e:?}"),
-//         }
-//     }
-// }
+    Ok(())
+}
+
+fn handle_message(state: &mut Option<State>) -> anyhow::Result<()> {
+    let message = await_message()?;
+    if message.is_request() {
+        handle_request(message.body(), state)
+    } else {
+        handle_response(
+            message
+                .context()
+                .context("openai_api: Failed to get context")?,
+        )
+    }
+}
+
+call_init!(init);
+fn init(_our: Address) {
+    let mut state = State::fetch();
+    loop {
+        match handle_message(&mut state) {
+            Ok(()) => {}
+            Err(e) => {
+                println!("openai_api: error: {:?}", e);
+            }
+        };
+    }
+}
