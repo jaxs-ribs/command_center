@@ -1,5 +1,5 @@
 use crate::exports::kinode::process::stt::{Guest, SttRequest, SttResponse};
-use kinode_process_lib::{vfs, Request, Response};
+use kinode_process_lib::Request;
 
 wit_bindgen::generate!({
     path: "target/wit",

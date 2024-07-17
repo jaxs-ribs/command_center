@@ -2,7 +2,7 @@ use crate::exports::kinode::process::llm::{
     ChatRequest, ClaudeChatRequest, EmbeddingRequest, Guest, LlmRequest, LlmResponse,
     Message as LlmMessage,
 };
-use kinode_process_lib::{vfs, Request, Response};
+use kinode_process_lib::Request;
 
 wit_bindgen::generate!({
     path: "target/wit",

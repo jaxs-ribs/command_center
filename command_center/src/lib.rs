@@ -1,6 +1,6 @@
 use crate::kinode::process::llm::{ChatRequest, EmbeddingRequest, LlmRequest, LlmResponse, Message as LlmMessage, ClaudeChatRequest};
-use crate::kinode::process::stt::{openai_transcribe, register_api_key, SttRequest, SttResponse};
-use kinode_process_lib::{await_message, call_init, println, Address, Message, Request, Response};
+use crate::kinode::process::stt::{openai_transcribe, register_api_key};
+use kinode_process_lib::{call_init, println, Address, Request};
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -9,7 +9,7 @@ wit_bindgen::generate!({
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
 
-fn stt() -> anyhow::Result<()> {
+fn _stt() -> anyhow::Result<()> {
     let result = register_api_key("u no taek key");
     println!("Result is going to be {:?}", result);
 

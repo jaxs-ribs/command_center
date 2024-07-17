@@ -9,7 +9,6 @@ use kinode_process_lib::{
 };
 use serde::Serialize;
 use std::{collections::HashMap, vec};
-use std::fmt::Debug;
 
 mod structs;
 use structs::State;
