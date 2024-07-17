@@ -1650,6 +1650,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "llm_api"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "kinode_process_lib 0.8.0",
+ "process_macros",
+ "serde",
+ "serde_json",
+ "wit-bindgen",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
