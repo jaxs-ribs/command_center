@@ -179,49 +179,49 @@ impl Guest for Api {
     fn register_openai_api_key(key: String) -> Result<String, String> {
         match _register_openai_api_key(&key) {
             Ok(result) => Ok(result),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 
     fn register_groq_api_key(key: String) -> Result<String, String> {
         match _register_groq_api_key(&key) {
             Ok(result) => Ok(result),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 
     fn register_claude_api_key(key: String) -> Result<String, String> {
         match _register_claude_api_key(&key) {
             Ok(result) => Ok(result),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 
     fn embedding(input: String, model: Option<String>) -> Result<String, String> {
         match _get_embedding(&input, model.as_deref()) {
             Ok(v) => Ok(serde_json::to_string(&v).unwrap()),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 
     fn openai_chat(input: String, model: Option<String>) -> Result<String, String> {
         match _openai_chat(&input, model.as_deref()) {
             Ok(result) => Ok(result),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 
     fn groq_chat(input: String, model: Option<String>) -> Result<String, String> {
         match _groq_chat(&input, model.as_deref()) {
             Ok(result) => Ok(result),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 
     fn claude_chat(input: String, model: Option<String>) -> Result<String, String> {
         match _claude_chat(&input, model.as_deref()) {
             Ok(result) => Ok(result),
-            Err(e) => Err(e.to_string()),
+            Err(e) => Err(format!("{e:?}")),
         }
     }
 }

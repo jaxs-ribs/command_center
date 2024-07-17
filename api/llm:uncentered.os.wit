@@ -167,7 +167,7 @@ interface llm {
     embedding: func(input: string, model: option<string>) -> result<string, string>;
     openai-chat: func(input: string, model: option<string>) -> result<string, string>;
     groq-chat: func(input: string, model: option<string>) -> result<string, string>;
-    claude-chat: func(input: string, moel: option<string>) -> result<string, string>;
+    claude-chat: func(input: string, model: option<string>) -> result<string, string>;
 }
 
 world llm-uncentered-dot-os-api-v0 {
