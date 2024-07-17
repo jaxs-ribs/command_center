@@ -39,7 +39,7 @@ interface llm {
         response-format: option<response-format>,
         seed: option<s32>,
         stop: option<stop>,
-        streamed: option<bool>,
+        %stream: option<bool>,
         temperature: option<float64>,
         top-p: option<float64>,
         tools: option<list<string>>,
@@ -60,7 +60,7 @@ interface llm {
         response-format: option<response-format>,
         seed: option<s32>,
         stop: option<stop>,
-        streamed: option<bool>,
+        %stream: option<bool>,
         temperature: option<float64>,
         top-p: option<float64>,
         tools: option<list<string>>,
@@ -85,7 +85,7 @@ interface llm {
     }
 
     record chat-image-content {
-        content-type: string,
+        %type: string,
         text: option<string>,
         image-url: option<image-url>,
     }
@@ -99,7 +99,7 @@ interface llm {
     }
 
     variant stop {
-        string-variant(string),
+        %string(string),
         array(list<string>),
     }
 
@@ -147,7 +147,7 @@ interface llm {
         role: string,
         stop-reason: string,
         stop-sequence: option<string>,
-        response-type: string,
+        %type: string,
         usage: claude-usage,
     }
 
@@ -157,7 +157,7 @@ interface llm {
     }
 
     record content {
-        content-type: string,
+        %type: string,
         text: string,
     }
 
