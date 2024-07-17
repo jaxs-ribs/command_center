@@ -1,0 +1,11 @@
+interface tg {
+}
+
+world tg-uncentered-dot-os-api-v0 {
+    export tg;
+}
+
+world tg-uncentered-dot-os-v0 {
+    import tg;
+    include process-v0;
+}

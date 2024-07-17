@@ -1,5 +1,6 @@
 world command-center-uncentered-dot-os-v0 {
     import stt;
     import llm;
+    import tg;
     include process-v0;
 }
