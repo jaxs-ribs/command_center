@@ -37,36 +37,93 @@ enum ApiKeyType {
 fn handle_response(context: &[u8]) -> anyhow::Result<()> {
     match context[0] {
         EMBEDDING_CONTEXT => handle_embedding_response()?,
-        OPENAI_CHAT_CONTEXT => handle_chat_response::<ChatResponse, _>(LlmResponse::OpenaiChat)?,
-        GROQ_CHAT_CONTEXT => handle_chat_response::<ChatResponse, _>(LlmResponse::GroqChat)?,
-        CHAT_IMAGE_CONTEXT => handle_chat_response::<ChatResponse, _>(LlmResponse::ChatImage)?,
-        CLAUDE_CHAT_CONTEXT => {
-            handle_chat_response::<ClaudeChatResponse, _>(LlmResponse::ClaudeChat)?
-        }
+        OPENAI_CHAT_CONTEXT => handle_openai_chat_response()?,
+        GROQ_CHAT_CONTEXT => handle_groq_chat_response()?,
+        CHAT_IMAGE_CONTEXT => handle_chat_image_response()?,
+        CLAUDE_CHAT_CONTEXT => handle_claude_chat_response()?,
         _ => {}
     }
 
     Ok(())
 }
 
-fn handle_chat_response<T, F>(response_wrapper: F) -> anyhow::Result<()>
-where
-    T: serde::de::DeserializeOwned + Debug,
-    F: FnOnce(Result<T, String>) -> LlmResponse,
-{
+fn handle_openai_chat_response() -> anyhow::Result<()> {
     let bytes = get_blob().context("Couldn't get blob")?;
-    let chat_response = match serde_json::from_slice::<T>(bytes.bytes.as_slice()) {
+    let chat_response = match serde_json::from_slice::<ChatResponse>(bytes.bytes.as_slice()) {
         Ok(response) => response,
         Err(e) => {
             println!(
-                "Failed to deserialize response. Raw bytes: {:?}",
+                "Failed to deserialize OpenAI chat response. Raw bytes: {:?}",
                 String::from_utf8_lossy(&bytes.bytes)
             );
             return Err(e.into());
         }
     };
 
-    let llm_response = response_wrapper(Ok(chat_response));
+    let llm_response = LlmResponse::OpenaiChat(Ok(chat_response));
+    Response::new()
+        .body(serde_json::to_vec(&llm_response)?)
+        .send()?;
+    Ok(())
+}
+
+fn handle_groq_chat_response() -> anyhow::Result<()> {
+    let bytes = get_blob().context("Couldn't get blob")?;
+    let chat_response = match serde_json::from_slice::<ChatResponse>(bytes.bytes.as_slice()) {
+        Ok(response) => response,
+        Err(e) => {
+            println!(
+                "Failed to deserialize Groq chat response. Raw bytes: {:?}",
+                String::from_utf8_lossy(&bytes.bytes)
+            );
+            return Err(e.into());
+        }
+    };
+
+    let llm_response = LlmResponse::GroqChat(Ok(chat_response));
+    Response::new()
+        .body(serde_json::to_vec(&llm_response)?)
+        .send()?;
+    Ok(())
+}
+
+fn handle_chat_image_response() -> anyhow::Result<()> {
+    let bytes = get_blob().context("Couldn't get blob")?;
+    let chat_response = match serde_json::from_slice::<ChatResponse>(bytes.bytes.as_slice()) {
+        Ok(response) => response,
+        Err(e) => {
+            println!(
+                "Failed to deserialize chat image response. Raw bytes: {:?}",
+                String::from_utf8_lossy(&bytes.bytes)
+            );
+            return Err(e.into());
+        }
+    };
+
+    let llm_response = LlmResponse::ChatImage(Ok(chat_response));
+    Response::new()
+        .body(serde_json::to_vec(&llm_response)?)
+        .send()?;
+    Ok(())
+}
+
+fn handle_claude_chat_response() -> anyhow::Result<()> {
+    let bytes = get_blob().context("Couldn't get blob")?;
+    let chat_response_wrapper = match serde_json::from_slice::<ClaudeChatResponseWrapper>(bytes.bytes.as_slice()) {
+        Ok(response) => response,
+        Err(e) => {
+            println!(
+                "Failed to deserialize Claude chat response. Raw bytes: {:?}",
+                String::from_utf8_lossy(&bytes.bytes)
+            );
+            return Err(e.into());
+        }
+    };
+    println!("Chat response wrapper is {:?}", chat_response_wrapper);
+    let chat_response = ClaudeChatResponse::from(chat_response_wrapper);
+    println!("Chat response is {:?}", chat_response);
+
+    let llm_response = LlmResponse::ClaudeChat(Ok(chat_response));
     Response::new()
         .body(serde_json::to_vec(&llm_response)?)
         .send()?;

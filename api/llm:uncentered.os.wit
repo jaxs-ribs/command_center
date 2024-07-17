@@ -85,7 +85,7 @@ interface llm {
     }
 
     record chat-image-content {
-        %type: string,
+        data-type: string,
         text: option<string>,
         image-url: option<image-url>,
     }
@@ -147,7 +147,7 @@ interface llm {
         role: string,
         stop-reason: string,
         stop-sequence: option<string>,
-        %type: string,
+        data-type: string,
         usage: claude-usage,
     }
 
@@ -157,7 +157,7 @@ interface llm {
     }
 
     record content {
-        %type: string,
+        data-type: string,
         text: string,
     }
 
