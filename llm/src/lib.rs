@@ -273,7 +273,7 @@ fn handle_generic_request<T: Serialize>(
     Ok(())
 }
 
-fn handle_message(our: &Address, state: &mut Option<State>) -> anyhow::Result<()> {
+fn handle_message(state: &mut Option<State>) -> anyhow::Result<()> {
     let message = await_message()?;
     if message.is_request() {
         handle_request(message.body(), state)
@@ -287,10 +287,10 @@ fn handle_message(our: &Address, state: &mut Option<State>) -> anyhow::Result<()
 }
 
 call_init!(init);
-fn init(our: Address) {
+fn init(_: Address) {
     let mut state = State::fetch();
     loop {
-        match handle_message(&our, &mut state) {
+        match handle_message(&mut state) {
             Ok(()) => {}
             Err(e) => {
                 println!("openai_api: error: {:?}", e);

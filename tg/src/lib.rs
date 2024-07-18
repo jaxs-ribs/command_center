@@ -1,12 +1,17 @@
+use crate::kinode::process::tg::{TgRequest, TgResponse};
 use kinode_process_lib::{
     await_message, call_init, get_blob,
     http::{self, HttpClientAction, OutgoingHttpRequest},
     println, Address, Message, Request, Response,
 };
-use crate::kinode::process::tg::{TgRequest, TgResponse};
 
 mod state;
 use state::*;
+
+mod helpers;
+use helpers::*;
+
+static BASE_API_URL: &str = "https://api.telegram.org/bot";
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -32,11 +37,39 @@ fn handle_request(
     source: &Address,
 ) -> anyhow::Result<()> {
     match serde_json::from_slice::<TgRequest>(body)? {
-        TgRequest::RegisterToken(_) => todo!(),
-        TgRequest::Subscribe => todo!(),
-        TgRequest::Unsubsribe => todo!(),
-        TgRequest::GetFile(_) => todo!(),
-        TgRequest::SendMessage(_) => todo!(),
+        TgRequest::RegisterToken(token) => {
+            state.tg_key = token.clone();
+            state.api_url = format!("{}{}", BASE_API_URL, token.clone());
+            state.current_offset = 0;
+            state.api = Some(Api {
+                api_url: state.api_url.clone(),
+            });
+            state.save();
+
+            let updates_params = frankenstein::GetUpdatesParams {
+                offset: Some(state.current_offset as i64),
+                limit: None,
+                timeout: Some(15),
+                allowed_updates: None,
+            };
+            request_no_wait(&state.api_url, "getUpdates", Some(updates_params))?;
+            let _ = Response::new()
+                .body(serde_json::to_vec(&TgResponse::RegisterToken(Ok("Success".to_string())))?)
+                .send();
+            Ok(())
+        }
+        TgRequest::Subscribe => {
+            Ok(())
+        },
+        TgRequest::Unsubscribe => {
+            Ok(())
+        },
+        TgRequest::GetFile(_) => {
+            Ok(())
+        },
+        TgRequest::SendMessage(_) => {
+            Ok(())
+        },
     }
 }
 

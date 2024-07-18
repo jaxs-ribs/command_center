@@ -2,7 +2,7 @@ interface tg {
     variant tg-request {
         register-token(string),
         subscribe,
-        unsubsribe,
+        unsubscribe,
         get-file(string),
         send-message(send-message-params)
     }
