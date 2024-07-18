@@ -81,3 +81,12 @@ impl TelegramApi for Api {
     }
 }
 
+pub fn get_updates_params(current_offset: u32) -> frankenstein::GetUpdatesParams {
+    frankenstein::GetUpdatesParams {
+        offset: Some(current_offset as i64),
+        limit: None,
+        timeout: Some(15),
+        allowed_updates: None,
+    }
+}
+

@@ -8,7 +8,9 @@ interface tg {
     }
 
     variant tg-response {
-        register-token(result<string, string>),
+        register-token(result<_, string>),
+        subscribe(result<_, string>),
+        unsubscribe(result<_, string>),
         
     }
 

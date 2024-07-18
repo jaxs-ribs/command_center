@@ -20,6 +20,13 @@ wit_bindgen::generate!({
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
 
+fn send_response<T: serde::Serialize>(response: T) -> anyhow::Result<()> {
+    Response::new()
+        .body(serde_json::to_vec(&response)?)
+        .send()
+        .map_err(|e| anyhow::anyhow!("Failed to send response: {}", e))
+}
+
 fn handle_message(our: &Address, state: &mut State) -> anyhow::Result<()> {
     let message = await_message()?;
     match message {
@@ -30,6 +37,7 @@ fn handle_message(our: &Address, state: &mut State) -> anyhow::Result<()> {
     }
 }
 
+// TODO: Zena: Move every enum variant handler to a separate function
 fn handle_request(
     our: &Address,
     state: &mut State,
@@ -46,30 +54,24 @@ fn handle_request(
             });
             state.save();
 
-            let updates_params = frankenstein::GetUpdatesParams {
-                offset: Some(state.current_offset as i64),
-                limit: None,
-                timeout: Some(15),
-                allowed_updates: None,
-            };
-            request_no_wait(&state.api_url, "getUpdates", Some(updates_params))?;
-            let _ = Response::new()
-                .body(serde_json::to_vec(&TgResponse::RegisterToken(Ok("Success".to_string())))?)
-                .send();
-            Ok(())
+            let update_params = get_updates_params(state.current_offset);
+            request_no_wait(&state.api_url, "getUpdates", Some(update_params))?;
+            send_response(TgResponse::RegisterToken(Ok(())))
         }
         TgRequest::Subscribe => {
-            Ok(())
-        },
+            if !state.subscribers.contains(source) {
+                state.subscribers.push(source.clone());
+                state.save();
+            }
+            send_response(TgResponse::Subscribe(Ok(())))
+        }
         TgRequest::Unsubscribe => {
-            Ok(())
+            state.subscribers.retain(|x| x != source);
+            state.save();
+            send_response(TgResponse::Unsubscribe(Ok(())))
         },
-        TgRequest::GetFile(_) => {
-            Ok(())
-        },
-        TgRequest::SendMessage(_) => {
-            Ok(())
-        },
+        TgRequest::GetFile(_) => Ok(()),
+        TgRequest::SendMessage(_) => Ok(()),
     }
 }
 
