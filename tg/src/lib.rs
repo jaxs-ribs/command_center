@@ -2,10 +2,10 @@ use crate::kinode::process::tg::{TgRequest, TgResponse};
 use kinode_process_lib::{
     await_message, call_init, get_blob,
     http::{self, HttpClientAction, OutgoingHttpRequest},
-    println, Address, Message, Request, Response,
+    println, Address, Message, Request, Response, LazyLoadBlob
 };
 use std::collections::HashMap;
-use frankenstein::TelegramApi;
+use frankenstein::{SendMessageParams, TelegramApi};
 use frankenstein::GetFileParams;
 
 mod state;
@@ -29,6 +29,15 @@ fn send_response<T: serde::Serialize>(response: T) -> anyhow::Result<()> {
         .send()
         .map_err(|e| anyhow::anyhow!("Failed to send response: {}", e))
 }
+
+fn send_response_with_blob(response: TgResponse, blob: LazyLoadBlob) -> anyhow::Result<()> {
+    Response::new()
+        .body(serde_json::to_vec(&response)?)
+        .blob(blob)
+        .send()
+        .map_err(|e| anyhow::anyhow!("Failed to send response with blob: {}", e))
+}
+
 
 fn handle_message(our: &Address, state: &mut State) -> anyhow::Result<()> {
     let message = await_message()?;
@@ -105,13 +114,29 @@ fn handle_request(
             let Some(blob) = get_blob() else {
                 return Err(anyhow::anyhow!("blob not found"));
             };
-            Response::new()
-                .body(serde_json::to_vec(&TgResponse::GetFile(Ok(())))?)
-                .blob(blob)
-                .send()
-                .map_err(|e| anyhow::anyhow!("Failed to send response: {}", e))
+            send_response_with_blob(TgResponse::GetFile(Ok(())), blob)
         }
-        TgRequest::SendMessage(_) => Ok(()),
+        TgRequest::SendMessage(params) => {
+            let Some(ref api) = state.api else {
+                return Err(anyhow::anyhow!("api not initialized"));
+            };
+            let params = SendMessageParams {
+                chat_id: frankenstein::ChatId::Integer(params.chat_id.into()),
+                text: params.text,
+                business_connection_id: None,
+                message_thread_id: None,
+                parse_mode: None,
+                entities: None,
+                link_preview_options: None,
+                disable_notification: None,
+                protect_content: None,
+                reply_parameters: None,
+                reply_markup: None,
+            };
+            let message = api.send_message(&params)?.result;
+            send_response(TgResponse::SendMessage(Ok(())))
+        },
+        // TODO: Zena: Send photo!
     }
 }
 

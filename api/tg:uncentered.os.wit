@@ -12,7 +12,7 @@ interface tg {
         subscribe(result<_, string>),
         unsubscribe(result<_, string>),
         get-file(result<_, string>), 
-        
+        send-message(result<_, string>)
     }
 
     record send-message-params {
