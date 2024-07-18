@@ -273,8 +273,14 @@ fn handle_generic_request<T: Serialize>(
     Ok(())
 }
 
-fn handle_message(state: &mut Option<State>) -> anyhow::Result<()> {
+fn handle_message(our: &Address, state: &mut Option<State>) -> anyhow::Result<()> {
     let message = await_message()?;
+    if message.source().node != our.node {
+        return Err(anyhow::anyhow!(
+            "got request from foreign source {:?}",
+            message.source()
+        ));
+    }
     if message.is_request() {
         handle_request(message.body(), state)
     } else {
@@ -287,10 +293,10 @@ fn handle_message(state: &mut Option<State>) -> anyhow::Result<()> {
 }
 
 call_init!(init);
-fn init(_our: Address) {
+fn init(our: Address) {
     let mut state = State::fetch();
     loop {
-        match handle_message(&mut state) {
+        match handle_message(&our, &mut state) {
             Ok(()) => {}
             Err(e) => {
                 println!("openai_api: error: {:?}", e);
