@@ -11,6 +11,7 @@ interface tg {
         register-token(result<_, string>),
         subscribe(result<_, string>),
         unsubscribe(result<_, string>),
+        get-file(result<_, string>), 
         
     }
 

@@ -4,6 +4,9 @@ use kinode_process_lib::{
     http::{self, HttpClientAction, OutgoingHttpRequest},
     println, Address, Message, Request, Response,
 };
+use std::collections::HashMap;
+use frankenstein::TelegramApi;
+use frankenstein::GetFileParams;
 
 mod state;
 use state::*;
@@ -69,8 +72,45 @@ fn handle_request(
             state.subscribers.retain(|x| x != source);
             state.save();
             send_response(TgResponse::Unsubscribe(Ok(())))
-        },
-        TgRequest::GetFile(_) => Ok(()),
+        }
+        TgRequest::GetFile(file_id) => {
+            let Some(ref api) = state.api else {
+                return Err(anyhow::anyhow!("api not initialized"));
+            };
+            let get_file_params = GetFileParams {
+                file_id,
+            };
+
+            let file_path = api
+                .get_file(&get_file_params)?
+                .result
+                .file_path
+                .ok_or_else(|| anyhow::anyhow!("file_path not found"))?;
+            let download_url = format!(
+                "https://api.telegram.org/file/bot{}/{}",
+                state.tg_key.clone(),
+                file_path
+            );
+
+            let outgoing_request = OutgoingHttpRequest {
+                method: "GET".to_string(),
+                version: None,
+                url: download_url,
+                headers: HashMap::new(),
+            };
+            let body_bytes = serde_json::to_vec(&HttpClientAction::Http(outgoing_request))?;
+            let _ = Request::to(("our", "http_client", "distro", "sys"))
+                .body(body_bytes)
+                .send_and_await_response(30)??;
+            let Some(blob) = get_blob() else {
+                return Err(anyhow::anyhow!("blob not found"));
+            };
+            Response::new()
+                .body(serde_json::to_vec(&TgResponse::GetFile(Ok(())))?)
+                .blob(blob)
+                .send()
+                .map_err(|e| anyhow::anyhow!("Failed to send response: {}", e))
+        }
         TgRequest::SendMessage(_) => Ok(()),
     }
 }
