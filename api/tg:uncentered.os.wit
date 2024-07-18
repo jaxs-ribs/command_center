@@ -1,4 +1,21 @@
 interface tg {
+    variant tg-request {
+        register-token(string),
+        subscribe,
+        unsubsribe,
+        get-file(string),
+        send-message(send-message-params)
+    }
+
+    variant tg-response {
+        register-token(result<string, string>),
+        
+    }
+
+    record send-message-params {
+        chat-id: s32, 
+        text: string,
+    }
 }
 
 world tg-uncentered-dot-os-api-v0 {
