@@ -87,12 +87,6 @@ fn register_openai_api_key(api_key: &str, state: &mut Option<State>) -> anyhow::
 
 fn handle_message(our: &Address, state: &mut Option<State>) -> anyhow::Result<()> {
     let msg = await_message()?;
-    if msg.source().node != our.node {
-        return Err(anyhow::anyhow!(
-            "got request from foreign source {:?}",
-            msg.source()
-        ));
-    }
     match msg {
         Message::Request { body, .. } => handle_request(state, &body),
         Message::Response { .. } => {

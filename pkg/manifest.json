@@ -3,7 +3,7 @@
         "process_name": "command_center",
         "process_wasm_path": "/command_center.wasm",
         "on_exit": "None",
-        "request_networking": true,
+        "request_networking": false,
         "request_capabilities": [
             "http_server:distro:sys"
         ],
@@ -14,7 +14,7 @@
         "process_name": "stt",
         "process_wasm_path": "/stt.wasm",
         "on_exit": "None",
-        "request_networking": true,
+        "request_networking": false,
         "request_capabilities": [
             "http_server:distro:sys",
             "http_client:distro:sys"
@@ -30,7 +30,23 @@
         "process_name": "llm",
         "process_wasm_path": "/llm.wasm",
         "on_exit": "None",
-        "request_networking": true,
+        "request_networking": false,
+        "request_capabilities": [
+            "http_server:distro:sys",
+            "http_client:distro:sys"
+        ],
+        "grant_capabilities": [
+            "main:command_center:appattacc.os",
+            "http_server:distro:sys",
+            "http_client:distro:sys"
+        ],
+        "public": true
+    }, 
+    {
+        "process_name": "tg",
+        "process_wasm_path": "/tg.wasm",
+        "on_exit": "None",
+        "request_networking": false,
         "request_capabilities": [
             "http_server:distro:sys",
             "http_client:distro:sys"

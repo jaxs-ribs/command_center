@@ -16,12 +16,8 @@ wit_bindgen::generate!({
 
 fn handle_message(our: &Address, state: &mut State) -> anyhow::Result<()> {
     let message = await_message()?;
-    if message.source().node != our.node {
-        return Err(anyhow::anyhow!(
-            "got request from foreign source {:?}",
-            message.source()
-        ));
-    }
+
+
 
     Ok(())
 }

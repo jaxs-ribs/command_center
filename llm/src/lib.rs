@@ -275,12 +275,6 @@ fn handle_generic_request<T: Serialize>(
 
 fn handle_message(our: &Address, state: &mut Option<State>) -> anyhow::Result<()> {
     let message = await_message()?;
-    if message.source().node != our.node {
-        return Err(anyhow::anyhow!(
-            "got request from foreign source {:?}",
-            message.source()
-        ));
-    }
     if message.is_request() {
         handle_request(message.body(), state)
     } else {
