@@ -41,12 +41,3 @@ impl State {
         }
     }
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct NewMessageUpdate {
-    pub chat_id: i64,
-    pub message_id: i32,
-    pub date: u64,
-    pub username: String,
-    pub text: String,
-}

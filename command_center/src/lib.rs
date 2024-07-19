@@ -3,7 +3,8 @@ use crate::kinode::process::llm::{
     register_openai_api_key,
 };
 use crate::kinode::process::stt::{openai_transcribe, register_api_key};
-use kinode_process_lib::{call_init, println, Address};
+use crate::kinode::process::tg::{get_file, register_token, send_message, subscribe, unsubscribe, SendMessageParams, TgRequest};
+use kinode_process_lib::{call_init, println, Address, Message, await_message};
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -24,7 +25,7 @@ fn _stt() -> anyhow::Result<()> {
 }
 
 // Update the llm() function to demonstrate the use of optional model parameters
-fn llm() -> anyhow::Result<()> {
+fn _llm() -> anyhow::Result<()> {
     println!("Starting LLM operations");
 
     // Register API keys
@@ -57,15 +58,61 @@ fn llm() -> anyhow::Result<()> {
     Ok(())
 }
 
+fn tg() -> anyhow::Result<()> {
+    let token_result = register_token("7327137177:AAHc5hXGmnUEI6CxrnlTYQTTGVG4Kphu288");
+    println!("CC: Token result: {:?}", token_result);
+
+    let sub_result = subscribe();
+    println!("CC: Sub result: {:?}", sub_result);
+
+    /*
+    how to catch the audio files? 
+    use get file to get the file id of the message if there is one
+     */
+    let mut counter = 0;
+    loop {
+        let message = await_message()?;
+        match message {
+            Message::Request { body, .. } => {
+                let Ok(TgRequest::SendMessage(message)) = serde_json::from_slice(&body) else {
+                    return Err(anyhow::anyhow!("unexpected response: {:?}", body));
+                };
+                println!("CC: Message received: {:?}", message);
+                let text = format!("The parrot said {}", message.text);
+                let params = SendMessageParams {
+                    chat_id: message.chat_id,
+                    text,
+                };
+                let send_message_result = send_message(&params);
+                println!("CC: Send message result: {:?}", send_message_result);
+                counter += 1;
+                if counter >= 10 {
+                    break;
+                }
+            },
+            _ => {}
+        }
+    }
+
+    let unsub_result = unsubscribe();
+    println!("CC: Unsub result: {:?}", unsub_result);
+
+    /*
+    Make a final constant loop and test if a message arrives (it shouldn't)
+     */
+
+    Ok(())
+}
+
 fn test() -> anyhow::Result<()> {
-    // stt()?;
-    llm()?;
+    // _stt()?;
+    // _llm()?;
+    tg()?;
     Ok(())
 }
 
 call_init!(init);
 fn init(_our: Address) {
-    println!("begin");
     match test() {
         Ok(_) => println!("OK"),
         Err(e) => println!("Error: {e}"),

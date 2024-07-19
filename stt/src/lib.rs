@@ -134,7 +134,6 @@ pub fn handle_openai_whisper_response() -> anyhow::Result<()> {
 
 call_init!(init);
 fn init(_: Address) {
-    println!("Start");
     let mut state = State::fetch();
 
     loop {

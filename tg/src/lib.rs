@@ -49,9 +49,7 @@ fn handle_message(state: &mut State) -> anyhow::Result<()> {
         Message::Request {
             ref body, source, ..
         } => handle_request(state, body, &source),
-        Message::Response {
-            source, ..
-        } => {
+        Message::Response { source, .. } => {
             if !["http_server:distro:sys", "http_client:distro:sys"]
                 .contains(&source.process.to_string().as_str())
             {
@@ -72,32 +70,41 @@ fn handle_http_response(state: &mut State) -> anyhow::Result<()> {
         ));
     };
     let Some(update) = response.result.get(0) else {
-        return Err(anyhow::anyhow!("no updates found in response"));
+        return Ok(());
     };
     let UpdateContent::Message(msg) = &update.content else {
         return Err(anyhow::anyhow!("not a message"));
     };
     let wit_msg = WitSendMessageParams {
-        chat_id: msg.chat.id as i32,
+        chat_id: msg.chat.id as i64,
         text: msg.text.clone().unwrap_or_default(),
     };
     let body = serde_json::to_vec(&TgRequest::SendMessage(wit_msg))?;
 
     for sub in state.subscribers.iter() {
-        let _ = Request::new()
-            .target(sub.clone())
-            .body(body.clone())
-            .send();
+        let _ = Request::new().target(sub.clone()).body(body.clone()).send();
     }
+
+    // set current_offset based on the response, keep same if no updates
+    let next_offset = response
+        .result
+        .last()
+        .map(|u| u.update_id + 1)
+        .unwrap_or(state.current_offset);
+    state.current_offset = next_offset;
+    let updates_params = frankenstein::GetUpdatesParams {
+        offset: Some(state.current_offset as i64),
+        limit: None,
+        timeout: Some(15),
+        allowed_updates: None,
+    };
+
+    request_no_wait(&state.api_url, "getUpdates", Some(updates_params))?;
 
     Ok(())
 }
 
-fn handle_request(
-    state: &mut State,
-    body: &[u8],
-    source: &Address,
-) -> anyhow::Result<()> {
+fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::Result<()> {
     match serde_json::from_slice::<TgRequest>(body)? {
         TgRequest::RegisterToken(token) => handle_register_token(state, token),
         TgRequest::Subscribe => handle_subscribe(state, source),
@@ -110,7 +117,12 @@ fn handle_request(
 fn handle_register_token(state: &mut State, token: String) -> anyhow::Result<()> {
     state.tg_key = token.clone();
     state.api_url = format!("{}{}", BASE_API_URL, token);
-    state.current_offset = 0;
+    // Only reset the current offset if the api is not initialized
+    state.current_offset = if state.api.is_some() {
+        state.current_offset
+    } else {
+        0
+    };
     state.api = Some(Api {
         api_url: state.api_url.clone(),
     });
@@ -172,20 +184,11 @@ fn handle_send_message(state: &State, params: WitSendMessageParams) -> anyhow::R
     let Some(ref api) = state.api else {
         return Err(anyhow::anyhow!("api not initialized"));
     };
-    let frankenstein_params = SendMessageParams {
-        chat_id: frankenstein::ChatId::Integer(params.chat_id.into()),
-        text: params.text,
-        business_connection_id: None,
-        message_thread_id: None,
-        parse_mode: None,
-        entities: None,
-        link_preview_options: None,
-        disable_notification: None,
-        protect_content: None,
-        reply_parameters: None,
-        reply_markup: None,
-    };
-    let _message = api.send_message(&frankenstein_params)?.result;
+    let frankenstein_params = SendMessageParams::builder()
+        .chat_id(frankenstein::ChatId::Integer(params.chat_id.into()))
+        .text(params.text)
+        .build();
+    let _message = api.send_message(&frankenstein_params)?;
     send_response(TgResponse::SendMessage(Ok(())))
 }
 

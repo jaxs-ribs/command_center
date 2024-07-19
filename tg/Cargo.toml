@@ -6,7 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1"
 bincode = "1.3.3"
-frankenstein = { version = "0.30", default-features = false, features = ["telegram-trait"] }
+frankenstein = { version = "0.32", default-features = false, features = ["telegram-trait"] }
 kinode_process_lib = { git = "https://github.com/kinode-dao/process_lib", tag = "v0.8.3" }
 process_macros = { git = "https://github.com/kinode-dao/process_macros", rev = "626e501" }
 url = "2.4.1"

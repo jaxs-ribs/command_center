@@ -16,7 +16,7 @@ interface tg {
     }
 
     record send-message-params {
-        chat-id: s32, 
+        chat-id: s64, 
         text: string,
     }
 

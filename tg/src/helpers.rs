@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use kinode_process_lib::{http::Method, http::send_request};
+use kinode_process_lib::{http::Method, http::send_request, println};
 use kinode_process_lib::http::send_request_await_response;
 // use kinode_process_lib::println;
 use std::collections::HashMap;
@@ -44,7 +44,6 @@ impl TelegramApi for Api {
         let url = format!("{}/{method}", self.api_url);
         let url = url::Url::from_str(&url)?;
 
-        // content-type application/json
         let headers: HashMap<String, String> =
             HashMap::from_iter([("Content-Type".into(), "application/json".into())]);
 
@@ -53,11 +52,18 @@ impl TelegramApi for Api {
         } else {
             Vec::new()
         };
+
         // TODO: Zena: This should never happen. We're serving multiple people, this is dangerous 
-        let res = send_request_await_response(Method::GET, url, Some(headers), 30, body)?;
+        let res = send_request_await_response(Method::GET, url, Some(headers), 30, body)?;  
+        // Attempt to decode the response body as UTF-8
+        let decoded_body = String::from_utf8(res.body().to_vec())
+            .map_err(|e| anyhow::anyhow!("Failed to decode response body as UTF-8: {}", e))?;
 
         let deserialized: T2 = serde_json::from_slice(&res.body())
-            .map_err(|e| anyhow::anyhow!("Failed to deserialize response body: {}", e))?;
+            .map_err(|e| {
+                println!("Deserialization error: {}", e);
+                anyhow::anyhow!("Failed to deserialize response body: {}", e)
+            })?;
 
         Ok(deserialized)
     }
