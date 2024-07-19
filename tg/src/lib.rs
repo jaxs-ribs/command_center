@@ -1,5 +1,10 @@
-use crate::kinode::process::tg::{TgRequest, TgResponse, SendMessageParams as WitSendMessageParams};
+use crate::kinode::process::tg::{
+    SendMessageParams as WitSendMessageParams, TgRequest, TgResponse,
+};
 use frankenstein::GetFileParams;
+use frankenstein::MethodResponse;
+use frankenstein::Update;
+use frankenstein::UpdateContent;
 use frankenstein::{SendMessageParams, TelegramApi};
 use kinode_process_lib::{
     await_message, call_init, get_blob,
@@ -44,8 +49,48 @@ fn handle_message(our: &Address, state: &mut State) -> anyhow::Result<()> {
         Message::Request {
             ref body, source, ..
         } => handle_request(our, state, body, &source),
-        Message::Response { .. } => Ok(()),
+        Message::Response {
+            ref body, source, ..
+        } => {
+            if !["http_server:distro:sys", "http_client:distro:sys"]
+                .contains(&source.process.to_string().as_str())
+            {
+                return Err(anyhow::anyhow!("invalid source"));
+            }
+            handle_http_response(state, &body)
+        }
     }
+}
+
+fn handle_http_response(state: &mut State, body: &[u8]) -> anyhow::Result<()> {
+    let Some(blob) = get_blob() else {
+        return Err(anyhow::anyhow!("blob not found in http response"));
+    };
+    let Ok(response) = serde_json::from_slice::<MethodResponse<Vec<Update>>>(&blob.bytes) else {
+        return Err(anyhow::anyhow!(
+            "couldn't parse http response into a telegram update"
+        ));
+    };
+    let Some(update) = response.result.get(0) else {
+        return Err(anyhow::anyhow!("no updates found in response"));
+    };
+    let UpdateContent::Message(msg) = &update.content else {
+        return Err(anyhow::anyhow!("not a message"));
+    };
+    let wit_msg = WitSendMessageParams {
+        chat_id: msg.chat.id as i32,
+        text: msg.text.clone().unwrap_or_default(),
+    };
+    let body = serde_json::to_vec(&TgRequest::SendMessage(wit_msg))?;
+
+    for sub in state.subscribers.iter() {
+        let _ = Request::new()
+            .target(sub.clone())
+            .body(body.clone())
+            .send();
+    }
+
+    Ok(())
 }
 
 fn handle_request(

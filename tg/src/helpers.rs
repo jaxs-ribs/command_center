@@ -14,7 +14,6 @@ pub fn request_no_wait<T1: serde::ser::Serialize>(
     method: &str,
     params: Option<T1>,
 ) -> Result<(), anyhow::Error> {
-    println!("tg: request no wait");
     let url = format!("{}/{method}", api_url);
     let url = url::Url::from_str(&url)?;
 
@@ -24,11 +23,8 @@ pub fn request_no_wait<T1: serde::ser::Serialize>(
     let body = if let Some(ref params) = params {
         serde_json::to_vec(params)?
     } else {
-        println!("tg: no params");
         Vec::new()
     };
-    println!("tg: method: {:?}", method);
-    println!("tg: body: {:?}", body);
     send_request(Method::GET, url, Some(headers), Some(20), body);
     Ok(())
 }
@@ -46,7 +42,6 @@ impl TelegramApi for Api {
         method: &str,
         params: Option<T1>,
     ) -> Result<T2, anyhow::Error> {
-        println!("tg: request");
         let url = format!("{}/{method}", self.api_url);
         let url = url::Url::from_str(&url)?;
 
@@ -57,7 +52,6 @@ impl TelegramApi for Api {
         let body = if let Some(ref params) = params {
             serde_json::to_vec(params)?
         } else {
-            println!("tg: no params");
             Vec::new()
         };
         // TODO: Zena: This should never happen. We're serving multiple people, this is dangerous 
