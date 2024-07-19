@@ -2669,6 +2669,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "tg_api"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "kinode_process_lib 0.8.0",
+ "process_macros",
+ "serde",
+ "serde_json",
+ "wit-bindgen",
+]
+
+[[package]]
 name = "thiserror"
 version = "1.0.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"

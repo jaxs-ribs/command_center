@@ -6,7 +6,8 @@ members = [
     "stt_api",
     "llm",
     "llm_api",
-    "tg", 
+    "tg",
+    "tg_api",
 ]
 
 [profile.release]

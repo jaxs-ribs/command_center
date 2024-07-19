@@ -19,6 +19,12 @@ interface tg {
         chat-id: s32, 
         text: string,
     }
+
+    register-token: func(token: string) -> result<_, string>;
+    subscribe: func() -> result<_, string>;
+    unsubscribe: func() -> result<_, string>;
+    get-file: func(file-id: string) -> result<_, string>;
+    send-message: func(params: send-message-params) -> result<_, string>;
 }
 
 world tg-uncentered-dot-os-api-v0 {
