@@ -58,17 +58,13 @@ fn _llm() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn tg() -> anyhow::Result<()> {
+fn _tg() -> anyhow::Result<()> {
     let token_result = register_token("7327137177:AAHc5hXGmnUEI6CxrnlTYQTTGVG4Kphu288");
     println!("CC: Token result: {:?}", token_result);
 
     let sub_result = subscribe();
     println!("CC: Sub result: {:?}", sub_result);
 
-    /*
-    how to catch the audio files? 
-    use get file to get the file id of the message if there is one
-     */
     let mut counter = 0;
     loop {
         let message = await_message()?;
@@ -96,18 +92,13 @@ fn tg() -> anyhow::Result<()> {
 
     let unsub_result = unsubscribe();
     println!("CC: Unsub result: {:?}", unsub_result);
-
-    /*
-    Make a final constant loop and test if a message arrives (it shouldn't)
-     */
-
     Ok(())
 }
 
 fn test() -> anyhow::Result<()> {
     // _stt()?;
     // _llm()?;
-    tg()?;
+    // _tg()?;
     Ok(())
 }
 
