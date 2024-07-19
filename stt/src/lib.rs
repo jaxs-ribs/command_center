@@ -85,7 +85,7 @@ fn register_openai_api_key(api_key: &str, state: &mut Option<State>) -> anyhow::
     Ok(())
 }
 
-fn handle_message(our: &Address, state: &mut Option<State>) -> anyhow::Result<()> {
+fn handle_message(state: &mut Option<State>) -> anyhow::Result<()> {
     let msg = await_message()?;
     match msg {
         Message::Request { body, .. } => handle_request(state, &body),
@@ -138,7 +138,7 @@ fn init(our: Address) {
     let mut state = State::fetch();
 
     loop {
-        match handle_message(&our, &mut state) {
+        match handle_message(&mut state) {
             Ok(_) => {}
             Err(e) => println!("got error while handling message: {e:?}"),
         }
