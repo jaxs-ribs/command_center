@@ -5,7 +5,6 @@ use crate::kinode::process::{
 };
 use kinode_process_lib::{await_message, call_init, get_blob, println, Address, Message};
 
-
 wit_bindgen::generate!({
     path: "target/wit",
     world: "command-center-uncentered-dot-os-v0",
@@ -18,13 +17,11 @@ fn handle_request(body: &[u8]) -> Result<(), String> {
         return Err("unexpected response".to_string());
     };
     let mut text = message.text.clone();
-
     if let Some(voice) = message.voice {
         get_file(&voice.file_id).map_err(|_| "failed to get file")?;
         let audio_blob = get_blob().ok_or("failed to get blob")?;
         text += &openai_transcribe(&audio_blob.bytes)?;
     }
-
     let answer = groq_chat(&text, None)?;
     send_message(&SendMessageParams {
         chat_id: message.chat_id,
@@ -44,9 +41,9 @@ fn handle_message(_our: &Address) -> anyhow::Result<()> {
 call_init!(init);
 fn init(our: Address) {
     let results = [
-        ("Groq API key", register_groq_api_key("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")),
-        ("STT API key", register_stt_key("sk-proj-J2y0MMBBYhLaw6iI680bT3BlbkFJPeH4fI3cumGNe6M6mbLX")),
-        ("Telegram token", register_token("7327137177:AAHc5hXGmnUEI6CxrnlTYQTTGVG4Kphu288").map(|_| "Success".to_string())),
+        ("Groq API key", register_groq_api_key("<KEY>")),
+        ("STT API key", register_stt_key("<KEY>")),
+        ("Telegram token", register_token("<KEY>").map(|_| "Success".to_string())),
         ("Subscription", subscribe().map(|_| "Success".to_string())),
     ];
 
