@@ -1,5 +1,5 @@
 use std::str::FromStr;
-use kinode_process_lib::{http::Method, http::send_request, LazyLoadBlob};
+use kinode_process_lib::{http::Method, http::send_request};
 use kinode_process_lib::http::send_request_await_response;
 // use kinode_process_lib::println;
 use std::collections::HashMap;
@@ -7,7 +7,6 @@ use std::path::PathBuf;
 use serde::Serialize;
 use serde::Deserialize;
 use frankenstein::TelegramApi;
-use crate::NewMessageUpdate;
 
 pub fn request_no_wait<T1: serde::ser::Serialize>(
     api_url: &str,

@@ -8,7 +8,7 @@ use frankenstein::UpdateContent;
 use frankenstein::{SendMessageParams, TelegramApi};
 use kinode_process_lib::{
     await_message, call_init, get_blob,
-    http::{self, HttpClientAction, OutgoingHttpRequest},
+    http::{HttpClientAction, OutgoingHttpRequest},
     println, Address, LazyLoadBlob, Message, Request, Response,
 };
 use std::collections::HashMap;
@@ -43,26 +43,26 @@ fn send_response_with_blob(response: TgResponse, blob: LazyLoadBlob) -> anyhow::
         .map_err(|e| anyhow::anyhow!("Failed to send response with blob: {}", e))
 }
 
-fn handle_message(our: &Address, state: &mut State) -> anyhow::Result<()> {
+fn handle_message(state: &mut State) -> anyhow::Result<()> {
     let message = await_message()?;
     match message {
         Message::Request {
             ref body, source, ..
-        } => handle_request(our, state, body, &source),
+        } => handle_request(state, body, &source),
         Message::Response {
-            ref body, source, ..
+            source, ..
         } => {
             if !["http_server:distro:sys", "http_client:distro:sys"]
                 .contains(&source.process.to_string().as_str())
             {
                 return Err(anyhow::anyhow!("invalid source"));
             }
-            handle_http_response(state, &body)
+            handle_http_response(state)
         }
     }
 }
 
-fn handle_http_response(state: &mut State, body: &[u8]) -> anyhow::Result<()> {
+fn handle_http_response(state: &mut State) -> anyhow::Result<()> {
     let Some(blob) = get_blob() else {
         return Err(anyhow::anyhow!("blob not found in http response"));
     };
@@ -94,7 +94,6 @@ fn handle_http_response(state: &mut State, body: &[u8]) -> anyhow::Result<()> {
 }
 
 fn handle_request(
-    our: &Address,
     state: &mut State,
     body: &[u8],
     source: &Address,
@@ -191,10 +190,10 @@ fn handle_send_message(state: &State, params: WitSendMessageParams) -> anyhow::R
 }
 
 call_init!(init);
-fn init(our: Address) {
+fn init(_: Address) {
     let mut state = State::fetch();
     loop {
-        match handle_message(&our, &mut state) {
+        match handle_message(&mut state) {
             Ok(()) => {}
             Err(e) => {
                 println!("tg: error: {:?}", e);
