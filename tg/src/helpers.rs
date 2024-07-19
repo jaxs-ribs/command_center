@@ -55,10 +55,6 @@ impl TelegramApi for Api {
 
         // TODO: Zena: This should never happen. We're serving multiple people, this is dangerous 
         let res = send_request_await_response(Method::GET, url, Some(headers), 30, body)?;  
-        // Attempt to decode the response body as UTF-8
-        let decoded_body = String::from_utf8(res.body().to_vec())
-            .map_err(|e| anyhow::anyhow!("Failed to decode response body as UTF-8: {}", e))?;
-
         let deserialized: T2 = serde_json::from_slice(&res.body())
             .map_err(|e| {
                 println!("Deserialization error: {}", e);

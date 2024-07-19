@@ -18,6 +18,15 @@ interface tg {
     record send-message-params {
         chat-id: s64, 
         text: string,
+        voice: option<voice>,
+    }
+
+    record voice {
+        file-id: string,
+        file-unique-id: string,
+        duration: u32,
+        mime-type: option<string>,
+        file-size: option<u64>,
     }
 
     register-token: func(token: string) -> result<_, string>;

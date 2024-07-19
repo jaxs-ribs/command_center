@@ -1,5 +1,5 @@
 use crate::kinode::process::tg::{
-    SendMessageParams as WitSendMessageParams, TgRequest, TgResponse,
+    SendMessageParams as WitSendMessageParams, TgRequest, TgResponse, Voice as WitVoice
 };
 use frankenstein::GetFileParams;
 use frankenstein::MethodResponse;
@@ -75,9 +75,21 @@ fn handle_http_response(state: &mut State) -> anyhow::Result<()> {
     let UpdateContent::Message(msg) = &update.content else {
         return Err(anyhow::anyhow!("not a message"));
     };
+    let voice = if let Some(voice_) = &msg.voice {
+        Some(WitVoice {
+            file_id: voice_.file_id.clone(),
+            file_unique_id: voice_.file_unique_id.clone(),
+            duration: voice_.duration.clone(),
+            mime_type: voice_.mime_type.clone(),
+            file_size: voice_.file_size.clone(),
+        })
+    } else {
+        None
+    };
     let wit_msg = WitSendMessageParams {
         chat_id: msg.chat.id as i64,
         text: msg.text.clone().unwrap_or_default(),
+        voice,
     };
     let body = serde_json::to_vec(&TgRequest::SendMessage(wit_msg))?;
 
