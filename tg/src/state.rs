@@ -8,7 +8,6 @@ pub struct State {
     pub api_url: String,
     pub current_offset: u32,
     pub subscribers: Vec<Address>,
-    // TODO: Check if api is even needed in the first place!
     pub api: Option<Api>,
     pub our_channel_id: u32,
 }
