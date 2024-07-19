@@ -1,12 +1,10 @@
-use crate::kinode::process::llm::{
-    claude_chat, embedding, groq_chat, openai_chat, register_claude_api_key, register_groq_api_key,
-    register_openai_api_key,
-};
-use crate::kinode::process::stt::{openai_transcribe, register_api_key as register_stt_key};
-use crate::kinode::process::tg::{
-    get_file, register_token, send_message, subscribe, unsubscribe, SendMessageParams, TgRequest,
+use crate::kinode::process::{
+    llm::{groq_chat, register_groq_api_key},
+    stt::{openai_transcribe, register_api_key as register_stt_key},
+    tg::{get_file, register_token, send_message, subscribe, SendMessageParams, TgRequest},
 };
 use kinode_process_lib::{await_message, call_init, get_blob, println, Address, Message};
+
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -15,59 +13,50 @@ wit_bindgen::generate!({
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
 
-fn handle_request(body: &[u8]) -> anyhow::Result<(), String> {
+fn handle_request(body: &[u8]) -> Result<(), String> {
     let Ok(TgRequest::SendMessage(message)) = serde_json::from_slice(body) else {
         return Err("unexpected response".to_string());
     };
     let mut text = message.text.clone();
-    if let Some(voice) = message.voice.clone() {
-        let _ = get_file(&voice.file_id);
-        let Some(audio_blob) = get_blob() else {
-            return Err("failed to get blob".to_string());
-        };
-        let transcript = openai_transcribe(&audio_blob.bytes)?;
-        text += &transcript;
+
+    if let Some(voice) = message.voice {
+        get_file(&voice.file_id).map_err(|_| "failed to get file")?;
+        let audio_blob = get_blob().ok_or("failed to get blob")?;
+        text += &openai_transcribe(&audio_blob.bytes)?;
     }
-    let params = SendMessageParams {
+
+    let answer = groq_chat(&text, None)?;
+    send_message(&SendMessageParams {
         chat_id: message.chat_id,
-        text,
+        text: answer,
         voice: None,
-    };
-    send_message(&params);
-    // TODO: 
-    // let answer = get_groq_answer(&text)?;
-    // let _message = send_bot_message(&answer, message.chat.id);
-    Ok(())
+    })
 }
 
 fn handle_message(_our: &Address) -> anyhow::Result<()> {
     let message = await_message()?;
-    match std::str::from_utf8(&message.body()) {
-        Ok(utf8_str) => println!("UTF-8 message content: {}", utf8_str),
-        Err(e) => println!("Error converting message to UTF-8: {}", e),
+    if let Message::Request { body, .. } = message {
+        handle_request(&body).map_err(anyhow::Error::msg)?;
     }
-    match message {
-        Message::Request { body, .. } => handle_request(&body).map_err(|e| anyhow::anyhow!(e)),
-        Message::Response { .. } => Ok(()),
-    }
+    Ok(())
 }
 
 call_init!(init);
 fn init(our: Address) {
-    let a = register_groq_api_key("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");
-    let b = register_stt_key("sk-proj-J2y0MMBBYhLaw6iI680bT3BlbkFJPeH4fI3cumGNe6M6mbLX");
-    let c = register_token("7327137177:AAHc5hXGmnUEI6CxrnlTYQTTGVG4Kphu288");
-    let d = subscribe();
+    let results = [
+        ("Groq API key", register_groq_api_key("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")),
+        ("STT API key", register_stt_key("sk-proj-J2y0MMBBYhLaw6iI680bT3BlbkFJPeH4fI3cumGNe6M6mbLX")),
+        ("Telegram token", register_token("7327137177:AAHc5hXGmnUEI6CxrnlTYQTTGVG4Kphu288").map(|_| "Success".to_string())),
+        ("Subscription", subscribe().map(|_| "Success".to_string())),
+    ];
 
-    println!("Groq API key registration result: {:?}", a);
-    println!("STT API key registration result: {:?}", b);
-    println!("Telegram token registration result: {:?}", c);
-    println!("Subscription result: {:?}", d);
+    for (name, result) in results {
+        println!("{} registration result: {:?}", name, result);
+    }
 
     loop {
-        match handle_message(&our) {
-            Ok(_) => {}
-            Err(e) => println!("Error: {:?}", e),
+        if let Err(e) = handle_message(&our) {
+            println!("Error: {:?}", e);
         }
     }
 }
