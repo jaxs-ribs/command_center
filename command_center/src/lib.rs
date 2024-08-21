@@ -40,21 +40,23 @@ fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Re
     for text in &texts {
         let content_hash = content_hash(text);
         state.incoming_hashes.push(content_hash.clone());
-        if state.master_hash_map.contains_key(&content_hash) {
+        if !state.master_hash_map.contains_key(&content_hash) {
             state.new_hashes.push(content_hash);
             state.content_to_embed.push(text.clone());
         }
     }
 
-    let Ok(new_embeddings) = embedding(&state.content_to_embed, None) else {
-        return Err(anyhow::anyhow!("Failed to get embeddings"));
-    };
+    if !state.content_to_embed.is_empty() {
+        let Ok(new_embeddings) = embedding(&state.content_to_embed, None) else {
+            return Err(anyhow::anyhow!("Failed to get embeddings"));
+        };
 
-    assert_eq!(state.new_hashes.len(), new_embeddings.len());
-    for (hash, embedding) in state.new_hashes.iter().zip(new_embeddings.iter()) {
-        state
-            .master_hash_map
-            .insert(hash.clone(), embedding.clone());
+        assert_eq!(state.new_hashes.len(), new_embeddings.len());
+        for (hash, embedding) in state.new_hashes.iter().zip(new_embeddings.iter()) {
+            state
+                .master_hash_map
+                .insert(hash.clone(), embedding.clone());
+        }
     }
 
     let mut return_list = Vec::new();
