@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::kinode::process::llm::{register_groq_api_key, register_openai_api_key};
+use crate::kinode::process::llm::{register_groq_api_key, register_openai_api_key, embedding};
 use crate::kinode::process::embedding::{EmbeddingRequest, EmbeddingResponse};
 use kinode_process_lib::{await_message, call_init, get_blob, get_typed_state, println, Address, Message};
 use sha2::{Sha256, Digest};
@@ -42,7 +42,7 @@ fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Re
             state.content_to_embed.push(text.clone());
         }
 
-        // let new_embeddings = get_embeddings();
+        let new_embeddings = embedding(&texts, None);
         
 
     }

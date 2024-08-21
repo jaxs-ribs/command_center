@@ -56,10 +56,10 @@ fn _register_claude_api_key(api_key: &str) -> anyhow::Result<String> {
     Ok(result)
 }
 
-fn _get_embedding(input: &str, model: Option<&str>) -> anyhow::Result<Vec<f32>> {
+fn _get_embedding(input: Vec<String>, model: Option<&str>) -> anyhow::Result<Vec<Vec<f32>>> {
     let embedding_request = EmbeddingRequest {
         model: model.unwrap_or("text-embedding-3-large").to_string(),
-        input: vec![input.to_string()],
+        input,
     };
     let LlmResponse::Embedding(Ok(result)) = Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
@@ -72,7 +72,7 @@ fn _get_embedding(input: &str, model: Option<&str>) -> anyhow::Result<Vec<f32>> 
             "Failed to get embedding: unexpected response"
         ));
     };
-    Ok(result.embeddings[0].clone())
+    Ok(result.embeddings)
 }
 
 fn _openai_chat(input: &str, model: Option<&str>) -> anyhow::Result<String> {
@@ -197,9 +197,9 @@ impl Guest for Api {
         }
     }
 
-    fn embedding(input: String, model: Option<String>) -> Result<String, String> {
-        match _get_embedding(&input, model.as_deref()) {
-            Ok(v) => Ok(serde_json::to_string(&v).unwrap()),
+    fn embedding(input: Vec<String>, model: Option<String>) -> Result<Vec<Vec<f32>>, String> {
+        match _get_embedding(input, model.as_deref()) {
+            Ok(v) => Ok(v),
             Err(e) => Err(format!("{e:?}")),
         }
     }

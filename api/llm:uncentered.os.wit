@@ -164,7 +164,7 @@ interface llm {
     register-openai-api-key: func(key: string) -> result<string, string>;
     register-groq-api-key: func(key: string) -> result<string, string>;
     register-claude-api-key: func(key: string) -> result<string, string>;
-    embedding: func(input: string, model: option<string>) -> result<string, string>;
+    embedding: func(input: list<string>, model: option<string>) -> result<list<list<float32>>, string>;
     openai-chat: func(input: string, model: option<string>) -> result<string, string>;
     groq-chat: func(input: string, model: option<string>) -> result<string, string>;
     claude-chat: func(input: string, model: option<string>) -> result<string, string>;
