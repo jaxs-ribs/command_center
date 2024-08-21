@@ -775,6 +775,7 @@ dependencies = [
  "process_macros",
  "serde",
  "serde_json",
+ "sha2",
  "wit-bindgen",
 ]
 
