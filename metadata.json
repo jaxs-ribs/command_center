@@ -1,9 +1,9 @@
 {
-    "name": "command_center",
+    "name": "embedding_engine",
     "description": "",
     "image": "",
     "properties": {
-        "package_name": "command_center",
+        "package_name": "embedding_engine",
         "current_version": "0.1.0",
         "publisher": "uncentered.os",
         "mirrors": [],

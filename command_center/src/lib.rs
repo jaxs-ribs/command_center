@@ -1,9 +1,8 @@
-use crate::kinode::process::{
-    llm::{groq_chat, register_groq_api_key},
-    stt::{openai_transcribe, register_api_key as register_stt_key},
-    tg::{get_file, register_token, send_message, subscribe, SendMessageParams, TgRequest},
-};
+use crate::kinode::process::llm::{register_groq_api_key, register_openai_api_key};
+use crate::kinode::process::embedding::{EmbeddingRequest, EmbeddingResponse};
 use kinode_process_lib::{await_message, call_init, get_blob, println, Address, Message};
+
+const OPENAI_API_KEY: &str = include_str!("../../OPENAI_API_KEY");
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -12,44 +11,34 @@ wit_bindgen::generate!({
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
 
+pub struct State {
+
+}
+
 fn handle_request(body: &[u8]) -> Result<(), String> {
-    let Ok(TgRequest::SendMessage(message)) = serde_json::from_slice(body) else {
-        return Err("unexpected response".to_string());
-    };
-    let mut text = message.text.clone();
-    if let Some(voice) = message.voice {
-        get_file(&voice.file_id).map_err(|_| "failed to get file")?;
-        let audio_blob = get_blob().ok_or("failed to get blob")?;
-        text += &openai_transcribe(&audio_blob.bytes)?;
+    let request: EmbeddingRequest = serde_json::from_slice(body)?;
+    match request {
+        EmbeddingRequest::GetEmbeddingsForTexts(texts) => get_embeddigns_for_texts(texts),
     }
-    let answer = groq_chat(&text, None)?;
-    send_message(&SendMessageParams {
-        chat_id: message.chat_id,
-        text: answer,
-        voice: None,
-    })
+    Ok(())
+}
+
+fn get_embeddigns_for_texts(texts: Vec<String>) -> Result<Vec<Vec<f32>>, String> {
+
 }
 
 fn handle_message(_our: &Address) -> anyhow::Result<()> {
     let message = await_message()?;
     if let Message::Request { body, .. } = message {
-        handle_request(&body).map_err(anyhow::Error::msg)?;
+        handle_request(&body)?;
     }
     Ok(())
 }
 
 call_init!(init);
 fn init(our: Address) {
-    let results = [
-        ("Groq API key", register_groq_api_key("<KEY>")),
-        ("STT API key", register_stt_key("<KEY>")),
-        ("Telegram token", register_token("<KEY>").map(|_| "Success".to_string())),
-        ("Subscription", subscribe().map(|_| "Success".to_string())),
-    ];
-
-    for (name, result) in results {
-        println!("{} registration result: {:?}", name, result);
-    }
+    println!("Starting command centers embedding engine");
+    println!("{:?}", register_openai_api_key(OPENAI_API_KEY).unwrap());
 
     loop {
         if let Err(e) = handle_message(&our) {
