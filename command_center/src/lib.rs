@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::kinode::process::embedding::{EmbeddingRequest, EmbeddingResponse};
 use crate::kinode::process::llm::{embedding, register_openai_api_key};
 use kinode_process_lib::{
-    await_message, call_init, get_typed_state, println, Address, Message, Response
+    await_message, call_init, get_typed_state, println, Address, Message, Response, set_state
 };
 use sha2::{Digest, Sha256};
 
@@ -37,6 +37,7 @@ fn handle_request(state: &mut State, body: &[u8]) -> anyhow::Result<()> {
 }
 
 fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Result<()> {
+    println!("Generating embeddings for {} texts", texts.len());
     for text in &texts {
         let content_hash = content_hash(text);
         state.incoming_hashes.push(content_hash.clone());
@@ -59,6 +60,8 @@ fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Re
         }
     }
 
+    println!("Retrieving embeddings for {} hashes", state.incoming_hashes.len());
+    println!("The non existing hashes are: {}", state.new_hashes.len());
     let mut return_list = Vec::new();
     for hash in state.incoming_hashes.iter() {
         return_list.push(state.master_hash_map.get(hash).unwrap().clone());
@@ -73,6 +76,7 @@ fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Re
         .body(serde_json::to_vec(&response)?)
         .send()?;
 
+    set_state(&bincode::serialize(&state)?);
 
     Ok(())
 }
