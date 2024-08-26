@@ -1473,11 +1473,13 @@ dependencies = [
 
 [[package]]
 name = "kinode_process_lib"
-version = "0.8.3"
-source = "git+https://github.com/kinode-dao/process_lib?tag=v0.8.3#f9fc2460b22e7d63bb74385d3adbaefebc71b333"
+version = "0.9.0"
+source = "git+https://github.com/kinode-dao/process_lib?tag=v0.9.0#284f202376b3cd3ce0c03aa660a006fc6187f236"
 dependencies = [
  "alloy",
  "alloy-primitives",
+ "alloy-sol-macro",
+ "alloy-sol-types",
  "anyhow",
  "bincode",
  "http",

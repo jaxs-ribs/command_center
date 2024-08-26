@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::kinode::process::embedding::{EmbeddingRequest, EmbeddingResponse};
 use crate::kinode::process::llm::{embedding, register_openai_api_key};
 use kinode_process_lib::{
-    await_message, call_init, get_typed_state, println, Address, Message, Response, set_state
+    await_message, call_init, get_typed_state, println, set_state, Address, Message, Response,
 };
 use sha2::{Digest, Sha256};
 
@@ -60,7 +60,10 @@ fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Re
         }
     }
 
-    println!("Retrieving embeddings for {} hashes", state.incoming_hashes.len());
+    println!(
+        "Retrieving embeddings for {} hashes",
+        state.incoming_hashes.len()
+    );
     println!("The non existing hashes are: {}", state.new_hashes.len());
     let mut return_list = Vec::new();
     for hash in state.incoming_hashes.iter() {
@@ -71,7 +74,7 @@ fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Re
     state.new_hashes.clear();
     state.content_to_embed.clear();
 
-    let response  = EmbeddingResponse::GetEmbeddingsForTexts(Ok(return_list));
+    let response = EmbeddingResponse::GetEmbeddingsForTexts(Ok(return_list));
     Response::new()
         .body(serde_json::to_vec(&response)?)
         .send()?;
@@ -101,7 +104,7 @@ fn init(our: Address) {
     println!("{:?}", register_openai_api_key(OPENAI_API_KEY).unwrap());
 
     let mut state: State =
-        get_typed_state(|bytes| Ok(bincode::deserialize(bytes)?)).unwrap_or_default();
+        get_typed_state(|bytes| bincode::deserialize(bytes).map_err(Box::new)).unwrap_or_default();
 
     loop {
         if let Err(e) = handle_message(&mut state, &our) {

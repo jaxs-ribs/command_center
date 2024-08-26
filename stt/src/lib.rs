@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::kinode::process::stt::{SttRequest, SttResponse};
 use kinode_process_lib::{
-    await_message, call_init, get_blob, println, Address, Message, Request,
-    Response, http::{self, HttpClientAction, OutgoingHttpRequest},
+    await_message, call_init, get_blob,
+    http::{self, client::HttpClientAction, client::OutgoingHttpRequest},
+    println, Address, Message, Request, Response,
 };
 
 pub const BASE_URL: &str = "https://api.openai.com/v1/audio/transcriptions";
@@ -19,8 +20,8 @@ wit_bindgen::generate!({
 });
 
 // TODO: Zena: Can't find a crate that does this in rust-wasm-wasi,
-// will just rewrite this process in js once support is there. 
-// This works, it's just ugly. 
+// will just rewrite this process in js once support is there.
+// This works, it's just ugly.
 pub fn openai_whisper_request(audio_bytes: &[u8], openai_key: &str) -> anyhow::Result<()> {
     let boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
     let content_type = format!("multipart/form-data; boundary={}", boundary);
@@ -48,7 +49,7 @@ pub fn openai_whisper_request(audio_bytes: &[u8], openai_key: &str) -> anyhow::R
 
     body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
 
-    Request::to(("our", "http_client", "distro", "sys"))
+    Ok(Request::to(("our", "http_client", "distro", "sys"))
         .body(
             serde_json::to_vec(&HttpClientAction::Http(OutgoingHttpRequest {
                 method: http::Method::POST.to_string(),
@@ -60,7 +61,7 @@ pub fn openai_whisper_request(audio_bytes: &[u8], openai_key: &str) -> anyhow::R
         )
         .blob_bytes(body)
         .expects_response(30)
-        .send()
+        .send()?)
 }
 
 fn register_openai_api_key(api_key: &str, state: &mut Option<State>) -> anyhow::Result<()> {
@@ -122,14 +123,16 @@ pub fn handle_openai_whisper_response() -> anyhow::Result<()> {
         Err(e) => {
             let error_message = e.to_string();
             match String::from_utf8(bytes.to_vec()) {
-                Ok(decoded) => SttResponse::OpenaiTranscribe(Err(format!("{}: {}", error_message, decoded))),
+                Ok(decoded) => {
+                    SttResponse::OpenaiTranscribe(Err(format!("{}: {}", error_message, decoded)))
+                }
                 Err(_) => SttResponse::OpenaiTranscribe(Err(error_message)),
             }
-        },
+        }
     };
 
     let body = serde_json::to_vec(&response)?;
-    Response::new().body(body).send()
+    Ok(Response::new().body(body).send()?)
 }
 
 call_init!(init);

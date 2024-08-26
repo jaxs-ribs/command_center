@@ -4,7 +4,7 @@ use crate::kinode::process::llm::{
 use anyhow::Context;
 use kinode_process_lib::{
     await_message, call_init, get_blob,
-    http::{HttpClientAction, OutgoingHttpRequest},
+    http::{client::HttpClientAction, client::OutgoingHttpRequest},
     println, Address, LazyLoadBlob, ProcessId, Request, Response,
 };
 use serde::Serialize;
