@@ -29,15 +29,22 @@ pub struct State {
     pub content_to_embed: Vec<Content>,
 }
 
-fn handle_request(state: &mut State, body: &[u8]) -> anyhow::Result<()> {
+fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::Result<()> {
     let request: EmbeddingRequest = serde_json::from_slice(body)?;
     match request {
-        EmbeddingRequest::GetEmbeddingsForTexts(texts) => handle_embedding_request(state, texts),
+        EmbeddingRequest::GetEmbeddingsForTexts(texts) => {
+            handle_embedding_request(state, texts, source)
+        }
     }
 }
 
-fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Result<()> {
-    println!("Generating embeddings for {} texts", texts.len());
+fn handle_embedding_request(
+    state: &mut State,
+    texts: Vec<String>,
+    source: &Address,
+) -> anyhow::Result<()> {
+    println!("Received embedding request from {:?}", source);
+    println!("Incoming text length is {} ", texts.len());
     for text in &texts {
         let content_hash = content_hash(text);
         state.incoming_hashes.push(content_hash.clone());
@@ -60,11 +67,8 @@ fn handle_embedding_request(state: &mut State, texts: Vec<String>) -> anyhow::Re
         }
     }
 
-    println!(
-        "Retrieving embeddings for {} hashes",
-        state.incoming_hashes.len()
-    );
     println!("The non existing hashes are: {}", state.new_hashes.len());
+    println!("The amount of existing hashes is: {}", state.incoming_hashes.len() - state.new_hashes.len());
     let mut return_list = Vec::new();
     for hash in state.incoming_hashes.iter() {
         return_list.push(state.master_hash_map.get(hash).unwrap().clone());
@@ -92,8 +96,8 @@ fn content_hash(content: &Content) -> ContentHash {
 
 fn handle_message(state: &mut State, _our: &Address) -> anyhow::Result<()> {
     let message = await_message()?;
-    if let Message::Request { body, .. } = message {
-        handle_request(state, &body)?;
+    if let Message::Request { body, source, .. } = message {
+        handle_request(state, &body, &source)?;
     }
     Ok(())
 }
