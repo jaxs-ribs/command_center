@@ -1,0 +1,74 @@
+use crate::kinode::process::llm::groq_chat;
+use kinode_process_lib::println;
+use crate::RecenteredResponse;
+use kinode_process_lib::Response;
+
+// TODO: Zena: Add state to the filter posts function so we don't calculate the same thing multiple times.
+
+pub fn filter_posts(rules: Vec<String>, post_contents: Vec<String>) -> anyhow::Result<()> {
+    let post_contents_len = post_contents.len();
+    let base_prompt = base_prompt(rules, post_contents);
+
+    let res = match groq_chat(&base_prompt, Some("llama-3.1-70b-versatile")) {
+        Ok(res) => res,
+        Err(e) => return Err(anyhow::anyhow!("Error in the groq chat: {}", e)),
+    };
+
+    println!("Parsing Groq chat response");
+    let parsed_result: Vec<bool> = res
+        .trim()
+        .chars()
+        .map(|c| match c {
+            '1' => true,
+            '0' => false,
+            _ => {
+                println!("Warning: Unexpected character '{}' in response", c);
+                false
+            }
+        })
+        .collect();
+
+    if parsed_result.len() != post_contents_len {
+        return Err(anyhow::anyhow!(
+            "Mismatch between number of posts and parsed results"
+        ));
+    }
+
+    let response = RecenteredResponse::FilterPostsWithRules(Ok(parsed_result));
+    Response::new()
+        .body(serde_json::to_vec(&response)?)
+        .send()?;
+
+    Ok(())
+}
+
+fn base_prompt(rules: Vec<String>, post_contents: Vec<String>) -> String {
+    let rules_str = rules
+        .iter()
+        .enumerate()
+        .map(|(i, rule)| format!("{}. {}\n", i + 1, rule))
+        .collect::<String>();
+
+    let posts_str = post_contents
+        .iter()
+        .map(|post| format!("\n\n---\n{}\n---\n\n", post))
+        .collect::<String>();
+
+    format!(
+        r###"
+For each of the following posts, you will answer with 0 or 1. 0 if the answer is no, 1 if the answer is yes.
+The answer is 0 if any of the rules are violated, otherwise it is 1.
+
+The rules are:
+{}
+
+------------
+The answer should just be a string of 1s and 0s representing the answer to the corresponding post, and nothing else. This is because it will get parsed to a system, so please only answer with 0s and 1s, and make sure the amount of chars matches the amount of posts, and the order is preserved. 
+
+Here are the posts, demarcated by "---":
+
+{}
+"###,
+        rules_str, posts_str
+    )
+}

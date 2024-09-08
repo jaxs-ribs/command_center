@@ -61,18 +61,21 @@ fn _get_embedding(input: Vec<String>, model: Option<&str>) -> anyhow::Result<Vec
         model: model.unwrap_or("text-embedding-3-large").to_string(),
         input,
     };
-    let LlmResponse::Embedding(Ok(result)) = Request::new()
+    match Request::new()
         .target(("our", "llm", "command_center", "uncentered.os"))
         .body(LlmRequest::Embedding(embedding_request))
         .send_and_await_response(20)??
         .body()
         .try_into()?
-    else {
-        return Err(anyhow::anyhow!(
-            "Failed to get embedding: unexpected response"
-        ));
-    };
-    Ok(result.embeddings)
+    {
+        LlmResponse::Embedding(Ok(result)) => Ok(result.embeddings),
+        LlmResponse::Embedding(Err(e)) => {
+            return Err(anyhow::anyhow!("Failed to get embedding: {}", e));
+        }
+        _ => {
+            return Err(anyhow::anyhow!("Failed to get embedding: unexpected response type"));
+        }
+    }
 }
 
 fn _openai_chat(input: &str, model: Option<&str>) -> anyhow::Result<String> {
