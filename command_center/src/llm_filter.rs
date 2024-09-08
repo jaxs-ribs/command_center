@@ -1,7 +1,7 @@
 use crate::kinode::process::llm::groq_chat;
 use kinode_process_lib::println;
 
-const MAX_POSTS: usize = 20;
+const MAX_POSTS: usize = 100;
 
 pub fn filter_posts(
     rules: Vec<String>,
