@@ -1,6 +1,6 @@
 use crate::kinode::process::llm::{register_groq_api_key, register_openai_api_key};
 use kinode_process_lib::{
-    await_message, call_init, get_typed_state, println, Address, Message, Response
+    await_message, call_init, get_typed_state, println, Address, Message, Response,
 };
 
 const OPENAI_API_KEY: &str = include_str!("../../OPENAI_API_KEY");
@@ -29,19 +29,36 @@ fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::R
     let request: RecenteredRequest = serde_json::from_slice(body)?;
     match request {
         RecenteredRequest::GetEmbeddingsForTexts(texts) => {
-            handle_embedding_request(state, texts, source)
+            handle_get_embeddings_for_texts(state, texts, source)
         }
         RecenteredRequest::FilterPostsWithRules {
             rules,
             post_contents,
-        } => {
-            let result = filter_posts(rules, post_contents);
-            let response = RecenteredResponse::FilterPostsWithRules(result);
-            Ok(Response::new()
-                .body(serde_json::to_vec(&response)?)
-                .send()?)
-        }
+        } => handle_filter_posts_with_rules(rules, post_contents),
     }
+}
+
+fn handle_get_embeddings_for_texts(
+    state: &mut State,
+    texts: Vec<String>,
+    source: &Address,
+) -> anyhow::Result<()> {
+    let return_list = get_embeddings_for_text(state, texts, source);
+    let response = RecenteredResponse::GetEmbeddingsForTexts(return_list);
+    Ok(Response::new()
+        .body(serde_json::to_vec(&response)?)
+        .send()?)
+}
+
+fn handle_filter_posts_with_rules(
+    rules: Vec<String>,
+    post_contents: Vec<String>,
+) -> anyhow::Result<()> {
+    let result = filter_posts(rules, post_contents);
+    let response = RecenteredResponse::FilterPostsWithRules(result);
+    Ok(Response::new()
+        .body(serde_json::to_vec(&response)?)
+        .send()?)
 }
 
 fn handle_message(state: &mut State, _our: &Address) -> anyhow::Result<()> {

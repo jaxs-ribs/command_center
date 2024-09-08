@@ -1,15 +1,13 @@
-use crate::kinode::process::llm::embedding;
-use crate::RecenteredResponse;
-use crate::State;
 use crate::content_hash;
-use kinode_process_lib::{println, set_state, Address, Response};
+use crate::kinode::process::llm::embedding;
+use crate::State;
+use kinode_process_lib::{println, set_state, Address};
 
-// TODO: Zena: Move the response handling outside of this 
-pub fn handle_embedding_request(
+pub fn get_embeddings_for_text(
     state: &mut State,
     texts: Vec<String>,
     source: &Address,
-) -> anyhow::Result<()> {
+) -> Result<Vec<Vec<f32>>, String> {
     println!("Received embedding request from {:?}", source);
     println!("Incoming text length is {} ", texts.len());
 
@@ -36,7 +34,7 @@ pub fn handle_embedding_request(
         }
         let new_embeddings = match embedding(&content_to_embed, None) {
             Ok(embeddings) => embeddings,
-            Err(e) => return Err(anyhow::anyhow!("Failed to get embeddings: {}", e)),
+            Err(e) => return Err(format!("Failed to get embeddings: {}", e)),
         };
 
         assert_eq!(new_hashes.len(), new_embeddings.len());
@@ -56,15 +54,9 @@ pub fn handle_embedding_request(
     for hash in incoming_hashes.iter() {
         return_list.push(state.embedding_hash_map.get(hash).unwrap().clone());
     }
-
-    let response = RecenteredResponse::GetEmbeddingsForTexts(Ok(return_list));
-    Response::new()
-        .body(serde_json::to_vec(&response)?)
-        .send()?;
-
-    set_state(&bincode::serialize(&state)?);
-
-    Ok(())
+    match bincode::serialize(&state) {
+        Ok(serialized) => set_state(&serialized),
+        Err(e) => return Err(format!("Failed to serialize state: {}", e)),
+    }
+    Ok(return_list)
 }
-
-
