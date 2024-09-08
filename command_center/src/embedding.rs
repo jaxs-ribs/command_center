@@ -1,12 +1,10 @@
 use crate::kinode::process::llm::embedding;
-use crate::Content;
-use crate::ContentHash;
 use crate::RecenteredResponse;
 use crate::State;
+use crate::content_hash;
 use kinode_process_lib::{println, set_state, Address, Response};
-use sha2::Sha256;
-use sha2::Digest;
 
+// TODO: Zena: Move the response handling outside of this 
 pub fn handle_embedding_request(
     state: &mut State,
     texts: Vec<String>,
@@ -14,6 +12,7 @@ pub fn handle_embedding_request(
 ) -> anyhow::Result<()> {
     println!("Received embedding request from {:?}", source);
     println!("Incoming text length is {} ", texts.len());
+
     let mut incoming_hashes = Vec::new();
     let mut new_hashes = Vec::new();
     let mut content_to_embed = Vec::new();
@@ -68,8 +67,4 @@ pub fn handle_embedding_request(
     Ok(())
 }
 
-fn content_hash(content: &Content) -> ContentHash {
-    let mut hasher = Sha256::new();
-    hasher.update(content.as_bytes());
-    format!("{:x}", hasher.finalize())
-}
+

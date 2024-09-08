@@ -1,13 +1,18 @@
 use crate::kinode::process::llm::groq_chat;
 use kinode_process_lib::println;
 
-// TODO: Zena: Add state to the filter posts function so we don't calculate the same thing multiple times.
-
 const MAX_POSTS: usize = 20;
 
-pub fn filter_posts(rules: Vec<String>, post_contents: Vec<String>) -> Result<Vec<bool>, String> {
+pub fn filter_posts(
+    rules: Vec<String>,
+    post_contents: Vec<String>,
+) -> Result<Vec<bool>, String> {
     if post_contents.len() > MAX_POSTS {
-        return Err(format!("Too many posts. Maximum allowed is {}, but {} were provided.", MAX_POSTS, post_contents.len()));
+        return Err(format!(
+            "Too many posts. Maximum allowed is {}, but {} were provided.",
+            MAX_POSTS,
+            post_contents.len()
+        ));
     }
 
     let post_contents_len = post_contents.len();
@@ -33,7 +38,9 @@ pub fn filter_posts(rules: Vec<String>, post_contents: Vec<String>) -> Result<Ve
         .collect();
 
     if parsed_result.len() != post_contents_len {
-        return Err(format!("Mismatch between number of posts and parsed results"));
+        return Err(format!(
+            "Mismatch between number of posts and parsed results"
+        ));
     }
 
     Ok(parsed_result)

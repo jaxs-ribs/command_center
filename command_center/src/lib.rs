@@ -15,6 +15,9 @@ use llm_filter::*;
 mod embedding;
 use embedding::*;
 
+mod helpers;
+use helpers::*;
+
 wit_bindgen::generate!({
     path: "target/wit",
     world: "command-center-uncentered-dot-os-v0",
