@@ -8,11 +8,8 @@ pub type Embedding = Vec<f32>;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Default, Debug)]
 pub struct State {
-    pub master_hash_map: HashMap<ContentHash, Embedding>,
+    pub embedding_hash_map: HashMap<ContentHash, Embedding>,
 
-    pub incoming_hashes: Vec<ContentHash>,
-    pub new_hashes: Vec<ContentHash>,
-    pub content_to_embed: Vec<Content>,
 }
 
 #[derive(Debug, Serialize, Deserialize, SerdeJsonInto, Clone)]

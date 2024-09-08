@@ -14,49 +14,49 @@ pub fn handle_embedding_request(
 ) -> anyhow::Result<()> {
     println!("Received embedding request from {:?}", source);
     println!("Incoming text length is {} ", texts.len());
+    let mut incoming_hashes = Vec::new();
+    let mut new_hashes = Vec::new();
+    let mut content_to_embed = Vec::new();
+
     for text in &texts {
         if text.is_empty() {
             println!("Skipping empty text");
             continue;
         }
         let content_hash = content_hash(text);
-        state.incoming_hashes.push(content_hash.clone());
-        if !state.master_hash_map.contains_key(&content_hash) {
-            state.new_hashes.push(content_hash);
-            state.content_to_embed.push(text.clone());
+        incoming_hashes.push(content_hash.clone());
+        if !state.embedding_hash_map.contains_key(&content_hash) {
+            new_hashes.push(content_hash);
+            content_to_embed.push(text.clone());
         }
     }
 
-    if !state.content_to_embed.is_empty() {
-        for content in &state.content_to_embed {
+    if !content_to_embed.is_empty() {
+        for content in &content_to_embed {
             println!("Embedding content: {}", content);
         }
-        let new_embeddings = match embedding(&state.content_to_embed, None) {
+        let new_embeddings = match embedding(&content_to_embed, None) {
             Ok(embeddings) => embeddings,
             Err(e) => return Err(anyhow::anyhow!("Failed to get embeddings: {}", e)),
         };
 
-        assert_eq!(state.new_hashes.len(), new_embeddings.len());
-        for (hash, embedding) in state.new_hashes.iter().zip(new_embeddings.iter()) {
+        assert_eq!(new_hashes.len(), new_embeddings.len());
+        for (hash, embedding) in new_hashes.iter().zip(new_embeddings.iter()) {
             state
-                .master_hash_map
+                .embedding_hash_map
                 .insert(hash.clone(), embedding.clone());
         }
     }
 
-    println!("The non existing hashes are: {}", state.new_hashes.len());
+    println!("The non existing hashes are: {}", new_hashes.len());
     println!(
         "The amount of existing hashes is: {}",
-        state.incoming_hashes.len() - state.new_hashes.len()
+        incoming_hashes.len() - new_hashes.len()
     );
     let mut return_list = Vec::new();
-    for hash in state.incoming_hashes.iter() {
-        return_list.push(state.master_hash_map.get(hash).unwrap().clone());
+    for hash in incoming_hashes.iter() {
+        return_list.push(state.embedding_hash_map.get(hash).unwrap().clone());
     }
-
-    state.incoming_hashes.clear();
-    state.new_hashes.clear();
-    state.content_to_embed.clear();
 
     let response = RecenteredResponse::GetEmbeddingsForTexts(Ok(return_list));
     Response::new()
