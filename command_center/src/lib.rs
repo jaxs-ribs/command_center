@@ -1,6 +1,6 @@
 use crate::kinode::process::llm::{register_groq_api_key, register_openai_api_key};
 use kinode_process_lib::{
-    await_message, call_init, get_typed_state, println, Address, Message, 
+    await_message, call_init, get_typed_state, println, Address, Message, Response
 };
 
 const OPENAI_API_KEY: &str = include_str!("../../OPENAI_API_KEY");
@@ -31,7 +31,13 @@ fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::R
         RecenteredRequest::FilterPostsWithRules {
             rules,
             post_contents,
-        } => filter_posts(rules, post_contents),
+        } => {
+            let result = filter_posts(rules, post_contents);
+            let response = RecenteredResponse::FilterPostsWithRules(result);
+            Ok(Response::new()
+                .body(serde_json::to_vec(&response)?)
+                .send()?)
+        }
     }
 }
 
