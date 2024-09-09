@@ -3,10 +3,7 @@ use kinode_process_lib::println;
 
 const MAX_POSTS: usize = 100;
 
-pub fn filter_posts(
-    rules: Vec<String>,
-    post_contents: Vec<String>,
-) -> Result<Vec<bool>, String> {
+pub fn filter_posts(rules: Vec<String>, post_contents: Vec<String>) -> Result<Vec<bool>, String> {
     if post_contents.len() > MAX_POSTS {
         return Err(format!(
             "Too many posts. Maximum allowed is {}, but {} were provided.",
@@ -18,12 +15,22 @@ pub fn filter_posts(
     let post_contents_len = post_contents.len();
     let base_prompt = base_prompt(rules, post_contents);
 
-    let res = match groq_chat(&base_prompt, Some("llama-3.1-70b-versatile")) {
+    let res = match groq_chat(&base_prompt, Some("llama3-groq-70b-8192-tool-use-preview")) {
+    // let res = match groq_chat(&base_prompt, Some("llama-3.1-70b-versatile")) {
         Ok(res) => res,
         Err(e) => return Err(format!("Error in the groq chat: {}", e)),
     };
 
-    println!("Parsing Groq chat response");
+    println!("The total amount of posts is: {}", post_contents_len);
+
+    println!("Groq chat response: {}", res);
+    println!("The length of the response is: {}", res.len());
+
+    // Strip the response of anything that isn't 0 or 1
+    let res: String = res.chars().filter(|&c| c == '0' || c == '1').collect();
+
+    println!("Filtered Groq chat response: {}", res);
+
     let parsed_result: Vec<bool> = res
         .trim()
         .chars()
@@ -55,24 +62,34 @@ fn base_prompt(rules: Vec<String>, post_contents: Vec<String>) -> String {
 
     let posts_str = post_contents
         .iter()
-        .map(|post| format!("\n\n---\n{}\n---\n\n", post))
+        .enumerate()
+        .map(|(i, post)| format!("Post #{}: {}\n---\n", i + 1, post))
         .collect::<String>();
 
     format!(
-        r###"
-For each of the following posts, you will answer with 0 or 1. 0 if the answer is no, 1 if the answer is yes.
-The answer is 0 if any of the rules are violated, otherwise it is 1.
+        r###"You are a content moderator tasked with evaluating posts based on a set of rules. Your job is to output a string of 0s and 1s, where each digit corresponds to a post's compliance with all rules.
 
-The rules are:
+Rules for evaluation:
 {}
+Evaluation instructions:
+1. Read each post carefully.
+2. Check if the post violates ANY of the rules.
+3. Output 1 if the post complies with ALL rules, 0 if it violates ANY rule.
 
-------------
-The answer should just be a string of 1s and 0s representing the answer to the corresponding post, and nothing else. This is because it will get parsed to a system, so please only answer with 0s and 1s, and make sure the amount of chars matches the amount of posts, and the order is preserved. 
+Important:
+- Your response must ONLY contain 0s and 1s, with NO spaces, punctuation, or other characters.
+- The number of digits in your response MUST EXACTLY MATCH the number of posts ({}).
+- Maintain the order: the first digit corresponds to Post #1, the second to Post #2, and so on.
 
-Here are the posts, demarcated by "---":
+Example output for 5 posts: 10110
 
+Posts to evaluate:
 {}
+Your evaluation (exactly {} digits of 0s and 1s):
 "###,
-        rules_str, posts_str
+        rules_str,
+        post_contents.len(),
+        posts_str,
+        post_contents.len()
     )
 }
