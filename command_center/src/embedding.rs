@@ -10,8 +10,15 @@ use serde_json::json;
 use std::collections::HashMap;
 use anyhow;
 use serde_json;
+use serde::Deserialize;
 
 const EMBED_URL: &str = "https://ai.sortug.com/embed";
+
+#[derive(Deserialize)]
+struct EmbeddingResponse {
+    embeddings: Vec<Vec<f32>>,
+    time_taken: f32,
+}
 
 fn get_embeddings(texts: &[String], is_query: bool) -> anyhow::Result<Vec<Vec<f32>>> {
     let request_body = json!({
@@ -45,9 +52,13 @@ fn get_embeddings(texts: &[String], is_query: bool) -> anyhow::Result<Vec<Vec<f3
     let Some(blob) = get_blob() else {
         return Err(anyhow::anyhow!("Failed to get blob").into());
     };
-    let embeddings: Vec<Vec<f32>> = serde_json::from_slice(&blob.bytes.as_slice())?;
+    
+    let response: EmbeddingResponse = serde_json::from_slice(&blob.bytes.as_slice())?;
 
-    Ok(embeddings)
+    // Optionally log the time taken
+    println!("Embedding time taken: {} seconds", response.time_taken);
+
+    Ok(response.embeddings)
 }
 
 pub fn get_embeddings_for_text(
@@ -77,22 +88,20 @@ pub fn get_embeddings_for_text(
     }
 
     if !content_to_embed.is_empty() {
-        for content in &content_to_embed {
-            println!("Embedding content: {}", content);
-        }
-        let new_embeddings = match get_embeddings(&content_to_embed, is_query) {
-            Ok(embeddings) => embeddings,
-            Err(e) => {
-                println!("Error obtaining embeddings: {}", e);
-                return Err(format!("Failed to get embeddings: {}", e))
-            },
-        };
+        // Process content in chunks of 8
+        for chunk in content_to_embed.chunks(8) {
+            let new_embeddings = match get_embeddings(chunk, is_query) {
+                Ok(embeddings) => embeddings,
+                Err(e) => {
+                    println!("Error obtaining embeddings: {}", e);
+                    return Err(format!("Failed to get embeddings: {}", e))
+                },
+            };
 
-        assert_eq!(new_hashes.len(), new_embeddings.len());
-        for (hash, embedding) in new_hashes.iter().zip(new_embeddings.iter()) {
-            state
-                .embedding_hash_map
-                .insert(hash.clone(), embedding.clone());
+            for (text, embedding) in chunk.iter().zip(new_embeddings.iter()) {
+                let hash = content_hash(text);
+                state.embedding_hash_map.insert(hash, embedding.clone());
+            }
         }
     }
 
