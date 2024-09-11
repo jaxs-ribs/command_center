@@ -13,7 +13,7 @@ pub struct State {
 
 #[derive(Debug, Serialize, Deserialize, SerdeJsonInto, Clone)]
 pub enum RecenteredRequest {
-    GetEmbeddingsForTexts(Vec<String>),
+    GetEmbeddingsForTexts{texts: Vec<String>, is_query: bool},
     FilterPostsWithRules { rules: Vec<String>, post_contents: Vec<String>, }
 }
 

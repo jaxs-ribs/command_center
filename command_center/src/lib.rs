@@ -28,8 +28,8 @@ wit_bindgen::generate!({
 fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::Result<()> {
     let request: RecenteredRequest = serde_json::from_slice(body)?;
     match request {
-        RecenteredRequest::GetEmbeddingsForTexts(texts) => {
-            handle_get_embeddings_for_texts(state, texts, source)
+        RecenteredRequest::GetEmbeddingsForTexts { texts, is_query } => {
+            handle_get_embeddings_for_texts(state, texts, source, is_query)
         }
         RecenteredRequest::FilterPostsWithRules {
             rules,
@@ -42,8 +42,9 @@ fn handle_get_embeddings_for_texts(
     state: &mut State,
     texts: Vec<String>,
     source: &Address,
+    is_query: bool,
 ) -> anyhow::Result<()> {
-    let return_list = get_embeddings_for_text(state, texts, source);
+    let return_list = get_embeddings_for_text(state, texts, source, is_query);
     let response = RecenteredResponse::GetEmbeddingsForTexts(return_list);
     Ok(Response::new()
         .body(serde_json::to_vec(&response)?)
@@ -77,6 +78,7 @@ fn init(our: Address) {
 
     let mut state: State =
         get_typed_state(|bytes| bincode::deserialize(bytes).map_err(Box::new)).unwrap_or_default();
+    // let mut state = State::default(); // TODO: Remove this
 
     loop {
         if let Err(e) = handle_message(&mut state, &our) {
