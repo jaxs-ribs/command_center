@@ -7,16 +7,16 @@ const OPENAI_API_KEY: &str = include_str!("../../OPENAI_API_KEY");
 const GROQ_API_KEY: &str = include_str!("../../GROQ_API_KEY");
 
 mod structs;
-use structs::*;
-
 mod llm_filter;
-use llm_filter::*;
-
 mod embedding;
-use embedding::*;
-
 mod helpers;
+mod media_description;
+
+use structs::*;
+use llm_filter::*;
+use embedding::*;
 use helpers::*;
+use media_description::*;
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -35,7 +35,32 @@ fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::R
             rules,
             post_contents,
         } => handle_filter_posts_with_rules(rules, post_contents),
+        RecenteredRequest::GetDescriptionFromMedia {
+            img_urls,
+            post_uuid,
+            stream_uuid,
+        } => handle_get_description_from_media(img_urls, post_uuid, stream_uuid),
     }
+}
+
+fn handle_get_description_from_media(
+    img_urls: Vec<String>,
+    _post_uuid: String,
+    _stream_uuid: String,
+) -> anyhow::Result<()> {
+    let mut final_string = String::new();
+    for img_url in img_urls {
+        if let Ok(return_value) = get_description_from_media(img_url) {
+            final_string.push_str(&return_value);
+            final_string.push_str("\n");
+        } else {
+            return Err(anyhow::anyhow!("Failed to get description from media"));
+        }
+    }
+    let response = RecenteredResponse::GetDescriptionFromMedia(Ok(final_string));
+    Ok(Response::new()
+        .body(serde_json::to_vec(&response)?)
+        .send()?)
 }
 
 fn handle_get_embeddings_for_texts(

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use process_macros::SerdeJsonInto;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub type ContentHash = String;
@@ -13,12 +13,24 @@ pub struct State {
 
 #[derive(Debug, Serialize, Deserialize, SerdeJsonInto, Clone)]
 pub enum RecenteredRequest {
-    GetEmbeddingsForTexts{texts: Vec<String>, is_query: bool},
-    FilterPostsWithRules { rules: Vec<String>, post_contents: Vec<String>, }
+    GetEmbeddingsForTexts {
+        texts: Vec<String>,
+        is_query: bool,
+    },
+    FilterPostsWithRules {
+        rules: Vec<String>,
+        post_contents: Vec<String>,
+    },
+    GetDescriptionFromMedia {
+        img_urls: Vec<String>,
+        post_uuid: String,
+        stream_uuid: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize, SerdeJsonInto, Clone)]
 pub enum RecenteredResponse {
     GetEmbeddingsForTexts(Result<Vec<Vec<f32>>, String>),
-    FilterPostsWithRules(Result<Vec<bool>, String>)
+    FilterPostsWithRules(Result<Vec<bool>, String>),
+    GetDescriptionFromMedia(Result<String, String>),
 }
