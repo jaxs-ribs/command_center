@@ -8,3 +8,4 @@ pkg/*.wasm
 */process_env
 OPENAI_API_KEY
 GROQ_API_KEY
+TG_TOKEN
