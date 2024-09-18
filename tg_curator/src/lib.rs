@@ -1,9 +1,8 @@
-use crate::kinode::process::llm::{register_groq_api_key, register_openai_api_key};
 use crate::kinode::process::tg::{
-    get_file, register_token, send_message, subscribe, SendMessageParams, TgRequest,
+    register_token, send_message, SendMessageParams, TgRequest,
 };
 use kinode_process_lib::{
-    await_message, call_init, get_typed_state, println, Address, Message, Request, Response,
+    await_message, call_init, get_typed_state, println, Address, Message, Request,
 };
 
 mod helpers;
@@ -11,6 +10,8 @@ mod structs;
 
 use helpers::*;
 use structs::*;
+
+const TG_TOKEN: &str = include_str!("../../TG_TOKEN");
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -22,14 +23,16 @@ wit_bindgen::generate!({
 pub fn send_code_to_terminal(node: &str, code: &str) -> anyhow::Result<()> {
     let address: (&str, &str, &str, &str) = (node, "hi", "terminal", "sys");
     // TODO: Zena: Test this
-    Request::to(address).body(serde_json::to_vec(&code)?).send()
+    Ok(Request::to(address)
+        .body(serde_json::to_vec(&code)?)
+        .send()?)
 }
 
 fn handle_request(state: &mut State, body: &[u8]) -> anyhow::Result<()> {
     let Ok(TgRequest::SendMessage(message)) = serde_json::from_slice(body) else {
-        return Err("unexpected request".to_string());
+        return Err(anyhow::anyhow!("unexpected request"));
     };
-    let mut response_text = "".to_string();
+    let response_text;
 
     let chat_id = message.chat_id;
     let text = message.text.clone();
@@ -53,7 +56,7 @@ fn handle_request(state: &mut State, body: &[u8]) -> anyhow::Result<()> {
     } else if let Some(code) = parse_six_digit_number(&text) {
         if let Some((kinode_address, expected_code)) = state.pending_codes.get(&chat_id) {
             if code == *expected_code {
-                state.address_book.insert(kinode_address, chat_id);
+                state.address_book.insert(chat_id, kinode_address.clone());
                 response_text = "Registered successfully".to_string();
             } else {
                 response_text = "Wrong code, try again".to_string();
@@ -83,14 +86,15 @@ fn handle_request(state: &mut State, body: &[u8]) -> anyhow::Result<()> {
             response_text = "You are not registered, send register command first".to_string();
         }
     } else {
-        response_text = "I'm not understanding you. Send /register <kinode_address> to register, a code to confirm registration, or a Twitter link to curate.".to_string();
+        response_text = "Send /register <kinode_address> to register, a code to confirm registration, or a Twitter link to curate.".to_string();
     }
 
-    send_message(&SendMessageParams {
+    let _ = send_message(&SendMessageParams {
         chat_id: message.chat_id,
-        text: answer,
+        text: response_text,
         voice: None,
-    })
+    });
+    Ok(())
 }
 
 fn handle_message(state: &mut State, _our: &Address) -> anyhow::Result<()> {
@@ -105,6 +109,8 @@ call_init!(init);
 fn init(our: Address) {
     let mut state = load_state();
     // TODO: Zena: register token
+    register_token(TG_TOKEN).expect("Failed to register token");
+
 
     loop {
         if let Err(e) = handle_message(&mut state, &our) {
