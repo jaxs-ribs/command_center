@@ -8,6 +8,7 @@ members = [
     "llm_api",
     "tg",
     "tg_api",
+    "tg_curator",
 ]
 
 [profile.release]

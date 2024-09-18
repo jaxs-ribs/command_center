@@ -2558,6 +2558,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tg_curator"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bincode",
+ "kinode_process_lib",
+ "process_macros",
+ "rand",
+ "serde",
+ "serde_json",
+ "sha2",
+ "wit-bindgen",
+]
+
+[[package]]
 name = "thiserror"
 version = "1.0.62"
 source = "registry+https://github.com/rust-lang/crates.io-index"
