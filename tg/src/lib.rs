@@ -1,5 +1,5 @@
 use crate::kinode::process::tg::{
-    SendMessageParams as WitSendMessageParams, TgRequest, TgResponse, Voice as WitVoice
+    SendMessageParams as WitSendMessageParams, TgRequest, TgResponse, Voice as WitVoice,
 };
 use frankenstein::GetFileParams;
 use frankenstein::MethodResponse;
@@ -69,41 +69,48 @@ fn handle_http_response(state: &mut State) -> anyhow::Result<()> {
             "couldn't parse http response into a telegram update"
         ));
     };
-    let Some(update) = response.result.get(0) else {
-        return Ok(());
-    };
-    let UpdateContent::Message(msg) = &update.content else {
-        return Err(anyhow::anyhow!("not a message"));
-    };
-    let voice = if let Some(voice_) = &msg.voice {
-        Some(WitVoice {
-            file_id: voice_.file_id.clone(),
-            file_unique_id: voice_.file_unique_id.clone(),
-            duration: voice_.duration.clone(),
-            mime_type: voice_.mime_type.clone(),
-            file_size: voice_.file_size.clone(),
-        })
-    } else {
-        None
-    };
-    let wit_msg = WitSendMessageParams {
-        chat_id: msg.chat.id as i64,
-        text: msg.text.clone().unwrap_or_default(),
-        voice,
-    };
-    let body = serde_json::to_vec(&TgRequest::SendMessage(wit_msg))?;
 
-    for sub in state.subscribers.iter() {
-        let _ = Request::new().target(sub.clone()).body(body.clone()).send();
+    if let Some(update) = response.result.get(0) {
+        let UpdateContent::Message(msg) = &update.content else {
+            return Err(anyhow::anyhow!("not a message"));
+        };
+        let voice = if let Some(voice_) = &msg.voice {
+            Some(WitVoice {
+                file_id: voice_.file_id.clone(),
+                file_unique_id: voice_.file_unique_id.clone(),
+                duration: voice_.duration.clone(),
+                mime_type: voice_.mime_type.clone(),
+                file_size: voice_.file_size.clone(),
+            })
+        } else {
+            None
+        };
+        let wit_msg = WitSendMessageParams {
+            chat_id: msg.chat.id as i64,
+            text: msg.text.clone().unwrap_or_default(),
+            voice,
+        };
+        let body = serde_json::to_vec(&TgRequest::SendMessage(wit_msg))?;
+
+        for sub in state.subscribers.iter() {
+            let _ = Request::new().target(sub.clone()).body(body.clone()).send();
+        }
     }
 
-    // set current_offset based on the response, keep same if no updates
+    update_offset_and_request_updates(state, &response)
+}
+
+fn update_offset_and_request_updates(
+    state: &mut State,
+    response: &MethodResponse<Vec<Update>>,
+) -> anyhow::Result<()> {
     let next_offset = response
         .result
         .last()
         .map(|u| u.update_id + 1)
         .unwrap_or(state.current_offset);
     state.current_offset = next_offset;
+    
     let updates_params = frankenstein::GetUpdatesParams {
         offset: Some(state.current_offset as i64),
         limit: None,
@@ -111,9 +118,7 @@ fn handle_http_response(state: &mut State) -> anyhow::Result<()> {
         allowed_updates: None,
     };
 
-    request_no_wait(&state.api_url, "getUpdates", Some(updates_params))?;
-
-    Ok(())
+    request_no_wait(&state.api_url, "getUpdates", Some(updates_params))
 }
 
 fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::Result<()> {

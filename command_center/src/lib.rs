@@ -105,9 +105,9 @@ fn init(our: Address) {
         get_typed_state(|bytes| bincode::deserialize(bytes).map_err(Box::new)).unwrap_or_default();
     // let mut state = State::default(); // TODO: Remove this
 
-    loop {
-        if let Err(e) = handle_message(&mut state, &our) {
-            println!("Error: {:?}", e);
-        }
-    }
+    // loop {
+    //     if let Err(e) = handle_message(&mut state, &our) {
+    //         println!("Error: {:?}", e);
+    //     }
+    // }
 }
