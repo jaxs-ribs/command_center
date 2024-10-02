@@ -34,3 +34,17 @@ pub enum RecenteredResponse {
     FilterPostsWithRules(Result<Vec<bool>, String>),
     GetDescriptionFromMedia(Result<String, String>),
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, process_macros::SerdeJsonInto)]
+pub enum ImgServerRequest {
+    UploadImage,
+    GetImage(URI),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, process_macros::SerdeJsonInto)]
+pub enum ImgServerResponse {
+    UploadImage(Result<URI, String>),
+    GetImage(Result<String, String>),
+}
+
+pub type URI = String;

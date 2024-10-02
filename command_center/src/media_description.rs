@@ -1,18 +1,44 @@
-use serde_json::json;
 use kinode_process_lib::{
-    http::client::{HttpClientAction, OutgoingHttpRequest},
-    Request, LazyLoadBlob,
     get_blob,
+    http::client::{HttpClientAction, OutgoingHttpRequest},
+    LazyLoadBlob, Request,
 };
-use std::collections::HashMap;
+use serde_json::json;
 use serde_json::Value;
+use std::collections::HashMap;
+
+use crate::ImgServerRequest;
+use crate::ImgServerResponse;
 
 const OPENAI_API_URL: &str = "https://api.openai.com/v1/chat/completions";
 const OPENAI_API_KEY: &str = include_str!("../../OPENAI_API_KEY");
+pub const IMG_SERVER_ADDRESS: (&str, &str, &str, &str) = (
+    "recentered.os",
+    "command_center",
+    "command_center",
+    "uncentered.os",
+);
 
-pub fn get_description_from_media(
-    img_url: String,
-) -> Result<String, String> {
+fn get_base_64_img_from_server(uri: String) -> anyhow::Result<String> {
+    let response = Request::to(IMG_SERVER_ADDRESS)
+        .body(ImgServerRequest::GetImage(uri))
+        .send_and_await_response(10)??;
+    match response.body().try_into()? {
+        ImgServerResponse::GetImage(Ok(b64_img)) => Ok(b64_img),
+        _ => Err(anyhow::anyhow!(
+            "Failed to upload image: unexpected response"
+        )),
+    }
+}
+
+pub fn get_description_from_media(img_url: String, is_uri: bool) -> Result<String, String> {
+    let img = if is_uri {
+        let b64_img = get_base_64_img_from_server(img_url).map_err(|e| e.to_string())?;
+        format!("data:image/jpeg;base64,{}", b64_img)
+    } else {
+        img_url
+    };
+
     let request_body = json!({
         "model": "gpt-4o-mini",
         "messages": [
@@ -26,7 +52,7 @@ pub fn get_description_from_media(
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": img_url
+                            "url": img
                         }
                     }
                 ]
@@ -37,7 +63,10 @@ pub fn get_description_from_media(
 
     let headers = HashMap::from_iter(vec![
         ("Content-Type".to_string(), "application/json".to_string()),
-        ("Authorization".to_string(), format!("Bearer {}", OPENAI_API_KEY)),
+        (
+            "Authorization".to_string(),
+            format!("Bearer {}", OPENAI_API_KEY),
+        ),
     ]);
 
     let outgoing_request = OutgoingHttpRequest {

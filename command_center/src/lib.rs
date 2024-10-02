@@ -50,7 +50,8 @@ fn handle_get_description_from_media(
 ) -> anyhow::Result<()> {
     let mut final_string = String::new();
     for img_url in img_urls {
-        if let Ok(return_value) = get_description_from_media(img_url) {
+        let is_uri = !img_url.starts_with("http://") && !img_url.starts_with("https://");
+        if let Ok(return_value) = get_description_from_media(img_url, is_uri) {
             final_string.push_str(&return_value);
             final_string.push_str("\n");
         } else {
