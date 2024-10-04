@@ -10,13 +10,13 @@ mod structs;
 mod llm_filter;
 mod embedding;
 mod helpers;
-mod media_description;
+mod subtext;
 
 use structs::*;
 use llm_filter::*;
 use embedding::*;
 use helpers::*;
-use media_description::*;
+use subtext::*;
 
 wit_bindgen::generate!({
     path: "target/wit",
