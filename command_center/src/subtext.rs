@@ -28,23 +28,24 @@ fn get_base_64_img_from_server(uri: String) -> anyhow::Result<String> {
 
 // Converts URIs to base64 images, otherwise returns the original URL
 fn process_image_urls(img_urls: Vec<String>) -> Vec<String> {
-    img_urls
-        .into_iter()
-        .map(|url| {
-            if !url.starts_with("http://") && !url.starts_with("https://") {
-                match get_base_64_img_from_server(url) {
-                    Ok(b64_img) => format!("data:image/jpeg;base64,{}", b64_img),
-                    Err(e) => {
-                        println!("Failed to fetch image: {}", e);
-                        String::new()
-                    }
+    let mut processed_urls = Vec::new();
+
+    for url in img_urls {
+        let processed_url = if url.starts_with("http://") || url.starts_with("https://") {
+            url
+        } else {
+            match get_base_64_img_from_server(url) {
+                Ok(b64_img) => format!("data:image/jpeg;base64,{}", b64_img),
+                Err(e) => {
+                    println!("Failed to fetch image: {}", e);
+                    continue;
                 }
-            } else {
-                url
             }
-        })
-        .filter(|img| !img.is_empty())
-        .collect()
+        };
+        processed_urls.push(processed_url);
+    }
+
+    processed_urls
 }
 
 fn create_request_body(images: Vec<String>, content: &str) -> Value {
