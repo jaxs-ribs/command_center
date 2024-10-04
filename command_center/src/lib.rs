@@ -35,33 +35,35 @@ fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::R
             rules,
             post_contents,
         } => handle_filter_posts_with_rules(rules, post_contents),
-        RecenteredRequest::GetDescriptionFromMedia {
+        RecenteredRequest::GetSubtext {
             img_urls,
             post_uuid,
             stream_uuid,
-        } => handle_get_description_from_media(img_urls, post_uuid, stream_uuid),
+            content,
+        } => handle_get_subtext(img_urls, post_uuid, stream_uuid, content),
     }
 }
 
-fn handle_get_description_from_media(
+fn handle_get_subtext(
     img_urls: Vec<String>,
+    content: String,
     _post_uuid: String,
     _stream_uuid: String,
 ) -> anyhow::Result<()> {
-    let mut final_string = String::new();
-    for img_url in img_urls {
-        let is_uri = !img_url.starts_with("http://") && !img_url.starts_with("https://");
-        if let Ok(return_value) = get_description_from_media(img_url, is_uri) {
-            final_string.push_str(&return_value);
-            final_string.push_str("\n");
-        } else {
-            return Err(anyhow::anyhow!("Failed to get description from media"));
+    match get_subtext(img_urls, content) {
+        Ok(subtext) => {
+            let response = RecenteredResponse::GetSubtext(Ok(subtext));
+            Ok(Response::new()
+                .body(serde_json::to_vec(&response)?)
+                .send()?)
+        }
+        Err(e) => {
+            let response = RecenteredResponse::GetSubtext(Err(e));
+            Ok(Response::new()
+                .body(serde_json::to_vec(&response)?)
+                .send()?)
         }
     }
-    let response = RecenteredResponse::GetDescriptionFromMedia(Ok(final_string));
-    Ok(Response::new()
-        .body(serde_json::to_vec(&response)?)
-        .send()?)
 }
 
 fn handle_get_embeddings_for_texts(

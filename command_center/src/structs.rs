@@ -21,10 +21,11 @@ pub enum RecenteredRequest {
         rules: Vec<String>,
         post_contents: Vec<String>,
     },
-    GetDescriptionFromMedia {
+    GetSubtext {
         img_urls: Vec<String>,
         post_uuid: String,
         stream_uuid: String,
+        content: String,
     },
 }
 
@@ -32,7 +33,7 @@ pub enum RecenteredRequest {
 pub enum RecenteredResponse {
     GetEmbeddingsForTexts(Result<Vec<Vec<f32>>, String>),
     FilterPostsWithRules(Result<Vec<bool>, String>),
-    GetDescriptionFromMedia(Result<String, String>),
+    GetSubtext(Result<String, String>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, process_macros::SerdeJsonInto)]
