@@ -109,7 +109,7 @@ fn create_user_content(images: Vec<String>, content: &str) -> Vec<Value> {
     user_content
 }
 
-fn send_request_to_openai(request_body: Value) -> Result<String, String> {
+fn send_request(request_body: Value) -> Result<String, String> {
     let headers = HashMap::from_iter(vec![
         ("Content-Type".to_string(), "application/json".to_string()),
         (
@@ -156,5 +156,5 @@ fn send_request_to_openai(request_body: Value) -> Result<String, String> {
 pub fn get_subtext(img_urls: Vec<String>, content: String) -> Result<String, String> {
     let images = process_image_urls(img_urls);
     let request_body = create_request_body(images, &content);
-    send_request_to_openai(request_body)
+    send_request(request_body)
 }
