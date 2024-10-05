@@ -50,7 +50,7 @@ fn process_image_urls(img_urls: Vec<String>) -> Vec<String> {
 
 fn create_request_body(images: Vec<String>, content: &str) -> Value {
     json!({
-        "model": "gpt-4-vision-preview",
+        "model": "gpt-4o",
         "messages": [
             {
                 "role": "system",
@@ -147,6 +147,11 @@ fn send_request(request_body: Value) -> Result<String, String> {
     let response: Value = serde_json::from_slice(&blob.bytes)
         .map_err(|e| format!("Failed to parse response: {}", e))?;
 
+    // TODO: Remove
+    match String::from_utf8(blob.bytes.clone()) {
+        Ok(decoded) => println!("Response: {}", decoded),
+        Err(e) => println!("Failed to decode response as UTF-8: {}", e),
+    }
     response["choices"][0]["message"]["content"]
         .as_str()
         .ok_or("Failed to extract content from response".to_string())
@@ -154,7 +159,10 @@ fn send_request(request_body: Value) -> Result<String, String> {
 }
 
 pub fn get_subtext(img_urls: Vec<String>, content: String) -> Result<String, String> {
+    println!("CC: Processing images");
     let images = process_image_urls(img_urls);
+    println!("CC: Creating request body");
     let request_body = create_request_body(images, &content);
+    println!("CC: Sending request");
     send_request(request_body)
 }

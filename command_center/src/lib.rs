@@ -50,14 +50,17 @@ fn handle_get_subtext(
     _post_uuid: String,
     _stream_uuid: String,
 ) -> anyhow::Result<()> {
+    println!("CC: Getting subtext");
     match get_subtext(img_urls, content) {
         Ok(subtext) => {
+            println!("CC: Subtext: {}", subtext);
             let response = RecenteredResponse::GetSubtext(Ok(subtext));
             Ok(Response::new()
                 .body(serde_json::to_vec(&response)?)
                 .send()?)
         }
         Err(e) => {
+            println!("CC: Error: {}", e);
             let response = RecenteredResponse::GetSubtext(Err(e));
             Ok(Response::new()
                 .body(serde_json::to_vec(&response)?)
@@ -106,7 +109,6 @@ fn init(our: Address) {
 
     let mut state: State =
         get_typed_state(|bytes| bincode::deserialize(bytes).map_err(Box::new)).unwrap_or_default();
-    // let mut state = State::default(); // TODO: Remove this
 
     loop {
         if let Err(e) = handle_message(&mut state, &our) {

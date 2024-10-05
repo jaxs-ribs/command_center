@@ -67,8 +67,8 @@ pub fn get_embeddings_for_text(
     source: &Address,
     is_query: bool,
 ) -> Result<Vec<Vec<f32>>, String> {
-    println!("Received embedding request from {:?}", source);
-    println!("Incoming text length is {} ", texts.len());
+    // println!("Received embedding request from {:?}", source);
+    // println!("Incoming text length is {} ", texts.len());
 
     let mut incoming_hashes = Vec::new();
     let mut new_hashes = Vec::new();
@@ -76,7 +76,7 @@ pub fn get_embeddings_for_text(
 
     for text in &texts {
         if text.is_empty() {
-            println!("Skipping empty text");
+            // println!("Skipping empty text");
             continue;
         }
         let content_hash = content_hash(text);
@@ -105,11 +105,11 @@ pub fn get_embeddings_for_text(
         }
     }
 
-    println!("The non existing hashes are: {}", new_hashes.len());
-    println!(
-        "The amount of existing hashes is: {}",
-        incoming_hashes.len() - new_hashes.len()
-    );
+    // println!("The non existing hashes are: {}", new_hashes.len());
+    // println!(
+    //     "The amount of existing hashes is: {}",
+    //     incoming_hashes.len() - new_hashes.len()
+    // );
     let mut return_list = Vec::new();
     for hash in incoming_hashes.iter() {
         return_list.push(state.embedding_hash_map.get(hash).unwrap().clone());
