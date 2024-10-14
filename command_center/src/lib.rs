@@ -6,16 +6,16 @@ use kinode_process_lib::{
 const OPENAI_API_KEY: &str = include_str!("../../OPENAI_API_KEY");
 const GROQ_API_KEY: &str = include_str!("../../GROQ_API_KEY");
 
-mod structs;
-mod llm_filter;
 mod embedding;
 mod helpers;
+mod llm_filter;
+mod structs;
 mod subtext;
 
-use structs::*;
-use llm_filter::*;
 use embedding::*;
 use helpers::*;
+use llm_filter::*;
+use structs::*;
 use subtext::*;
 
 wit_bindgen::generate!({
@@ -29,7 +29,7 @@ fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::R
     let request: RecenteredRequest = serde_json::from_slice(body)?;
     match request {
         RecenteredRequest::GetEmbeddingsForTexts { texts, is_query } => {
-            handle_get_embeddings_for_texts(state, texts, source, is_query)
+            handle_get_embeddings_for_texts(state, texts, is_query, source)
         }
         RecenteredRequest::FilterPostsWithRules {
             rules,
@@ -40,7 +40,7 @@ fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::R
             post_uuid,
             stream_uuid,
             content,
-        } => handle_get_subtext(img_urls, post_uuid, stream_uuid, content),
+        } => handle_get_subtext(img_urls, content, post_uuid, stream_uuid),
     }
 }
 
@@ -72,10 +72,10 @@ fn handle_get_subtext(
 fn handle_get_embeddings_for_texts(
     state: &mut State,
     texts: Vec<String>,
-    source: &Address,
     is_query: bool,
+    source: &Address,
 ) -> anyhow::Result<()> {
-    let return_list = get_embeddings_for_text(state, texts, source, is_query);
+    let return_list = get_embeddings_for_text(state, texts, is_query, source);
     let response = RecenteredResponse::GetEmbeddingsForTexts(return_list);
     Ok(Response::new()
         .body(serde_json::to_vec(&response)?)

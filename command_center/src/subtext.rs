@@ -68,38 +68,35 @@ fn create_request_body(images: Vec<String>, content: &str) -> Value {
 fn create_user_content(images: Vec<String>, content: &str) -> Vec<Value> {
     let mut user_content = vec![json!({
         "type": "text",
-        "text": "Analyze the provided images and text content. Your description will be used to create embeddings for a 7B parameter language model, which will then be used for semantic search and content clustering. Your goal is to capture deep, nuanced information that this smaller model might miss.
+        "text": "
+        You will be given a post, and possibly some images. 
 
-            Generate a comprehensive analysis (300-500 words) that covers:
+        1. If there are images, describe images in detail for embedding and semantic search.
+        2. Extract subtext and hidden meanings:
+            - Focus on elements the embedding model may miss
+            - Avoid repeating obvious content from image description
+            - Use bullet points with tags or short sentences
+            - Explain jokes/hidden meanings briefly
+            - Include non-obvious associated words and deep connections
+            - Prioritize unique, search-relevant content
 
-            1. Visual Elements: Describe key visual components, their relationships, and any notable stylistic choices.
-            2. Textual Content: Summarize the main points, tone, and style of the accompanying text.
-            3. Thematic Analysis: Identify overarching themes, messages, or narratives.
-            4. Cultural Context: Note any references to memes, trends, current events, or cultural phenomena.
-            5. Emotional Landscape: Describe the emotional tone, mood, and any evoked feelings.
-            6. Subtext and Implications: Uncover hidden meanings, satire, irony, or subtle messaging.
-            7. Relevance and Significance: Explain why this content might be important or interesting.
-            8. Categorical Information: Suggest potential categories or tags for clustering.
-            9. Semantic Richness: Use varied, precise vocabulary to enhance future word-based searches.
-            10. Comparative Elements: Mention similar content, themes, or styles this might relate to.
-
-            Your analysis should be:
-            - Detailed yet concise, favoring information density over length.
-            - Objective in tone, but noting subjective elements when relevant.
-            - Rich in specific, searchable terms without forced keyword stuffing.
-            - Structured to support both broad topical searches and niche, detailed queries.
-
-            Remember, your description will be crucial in helping users rediscover this content through various search patterns. Capture the essence that makes this content unique and memorable."
+        Aim for comprehensive yet concise descriptions that facilitate effective searching and clustering.
+        "
     })];
 
-    user_content.extend(images.into_iter().map(|img| {
+    let image_content = images.into_iter().map(|img| {
         json!({
             "type": "image_url",
             "image_url": {
                 "url": img
             }
         })
-    }));
+    }).collect::<Vec<_>>();
+    println!("----");
+    println!("{:?}", image_content);
+    println!("Text content: {:?}", content);
+    println!("----");
+    user_content.extend(image_content);
 
     user_content.push(json!({
         "type": "text",

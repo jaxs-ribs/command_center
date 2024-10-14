@@ -1,16 +1,15 @@
 use crate::content_hash;
 use crate::State;
+use anyhow;
 use kinode_process_lib::{
-    println, set_state, Address,
-    http::client::{HttpClientAction, OutgoingHttpRequest},
-    Request, LazyLoadBlob,
     get_blob,
+    http::client::{HttpClientAction, OutgoingHttpRequest},
+    println, set_state, LazyLoadBlob, Request, Address,
 };
+use serde::Deserialize;
+use serde_json;
 use serde_json::json;
 use std::collections::HashMap;
-use anyhow;
-use serde_json;
-use serde::Deserialize;
 
 const EMBED_URL: &str = "https://ai.sortug.com/embed";
 
@@ -26,9 +25,10 @@ fn get_embeddings(texts: &[String], is_query: bool) -> anyhow::Result<Vec<Vec<f3
         "is_query": is_query
     });
 
-    let headers = HashMap::from_iter(vec![
-        ("Content-Type".to_string(), "application/json".to_string()),
-    ]);
+    let headers = HashMap::from_iter(vec![(
+        "Content-Type".to_string(),
+        "application/json".to_string(),
+    )]);
 
     let outgoing_request = OutgoingHttpRequest {
         method: "POST".to_string(),
@@ -52,7 +52,7 @@ fn get_embeddings(texts: &[String], is_query: bool) -> anyhow::Result<Vec<Vec<f3
     let Some(blob) = get_blob() else {
         return Err(anyhow::anyhow!("Failed to get blob").into());
     };
-    
+
     let response: EmbeddingResponse = serde_json::from_slice(&blob.bytes.as_slice())?;
 
     // Optionally log the time taken
@@ -64,59 +64,52 @@ fn get_embeddings(texts: &[String], is_query: bool) -> anyhow::Result<Vec<Vec<f3
 pub fn get_embeddings_for_text(
     state: &mut State,
     texts: Vec<String>,
-    source: &Address,
     is_query: bool,
+    _source: &Address,
 ) -> Result<Vec<Vec<f32>>, String> {
-    // println!("Received embedding request from {:?}", source);
-    // println!("Incoming text length is {} ", texts.len());
-
-    let mut incoming_hashes = Vec::new();
-    let mut new_hashes = Vec::new();
-    let mut content_to_embed = Vec::new();
+    // println!("Node {:?} is requesting embeddings for {:?} texts ", _source, texts.len());
+    let mut input_hashes = Vec::new();
+    let mut unembedded_hashes = Vec::new();
+    let mut contents_to_embed = Vec::new();
+    let mut return_list = Vec::new();
 
     for text in &texts {
-        if text.is_empty() {
-            // println!("Skipping empty text");
-            continue;
-        }
         let content_hash = content_hash(text);
-        incoming_hashes.push(content_hash.clone());
+        input_hashes.push(content_hash.clone());
         if !state.embedding_hash_map.contains_key(&content_hash) {
-            new_hashes.push(content_hash);
-            content_to_embed.push(text.clone());
+            unembedded_hashes.push(content_hash);
+            contents_to_embed.push(text.clone());
         }
     }
 
-    if !content_to_embed.is_empty() {
-        // Process content in chunks of 8
-        for chunk in content_to_embed.chunks(8) {
-            let new_embeddings = match get_embeddings(chunk, is_query) {
-                Ok(embeddings) => embeddings,
-                Err(e) => {
-                    println!("Error obtaining embeddings: {}", e);
-                    return Err(format!("Failed to get embeddings: {}", e))
-                },
-            };
-
-            for (text, embedding) in chunk.iter().zip(new_embeddings.iter()) {
-                let hash = content_hash(text);
-                state.embedding_hash_map.insert(hash, embedding.clone());
-            }
-        }
+    for (unembedded_hash, content_to_embed) in
+        unembedded_hashes.iter().zip(contents_to_embed.iter())
+    {
+        println!("Content to embed: {:?}", content_to_embed);
+        println!("----------------------------------");
+        let embedding = get_embedding(content_to_embed, is_query)?;
+        state.embedding_hash_map.insert(unembedded_hash.to_string(), embedding);
     }
 
-    // println!("The non existing hashes are: {}", new_hashes.len());
-    // println!(
-    //     "The amount of existing hashes is: {}",
-    //     incoming_hashes.len() - new_hashes.len()
-    // );
-    let mut return_list = Vec::new();
-    for hash in incoming_hashes.iter() {
+    for hash in input_hashes.iter() {
         return_list.push(state.embedding_hash_map.get(hash).unwrap().clone());
     }
+    
     match bincode::serialize(&state) {
         Ok(serialized) => set_state(&serialized),
         Err(e) => return Err(format!("Failed to serialize state: {}", e)),
     }
+
     Ok(return_list)
+}
+
+fn get_embedding(text: &str, is_query: bool) -> Result<Vec<f32>, String> {
+    let new_embeddings = match get_embeddings(&[text.to_string()], is_query) {
+        Ok(embeddings) => embeddings,
+        Err(e) => {
+            println!("Error obtaining embeddings: {}", e);
+            return Err(format!("Failed to get embeddings: {}", e));
+        }
+    };
+    Ok(new_embeddings[0].clone())
 }
