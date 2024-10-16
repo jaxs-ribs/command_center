@@ -13,21 +13,31 @@ wit_bindgen::generate!({
 });
 
 fn handle_request(body: &[u8]) -> Result<(), String> {
-    let Ok(TgRequest::SendMessage(message)) = serde_json::from_slice(body) else {
-        return Err("unexpected response".to_string());
+    let message = serde_json::from_slice::<TgRequest>(body)
+        .map_err(|e| format!("Failed to parse TgRequest: {}", e))?;
+
+    let TgRequest::SendMessage(message) = message else {
+        return Err("Unexpected request type".to_string());
     };
+
     let mut text = message.text.clone();
     if let Some(voice) = message.voice {
-        get_file(&voice.file_id).map_err(|_| "failed to get file")?;
-        let audio_blob = get_blob().ok_or("failed to get blob")?;
-        text += &openai_transcribe(&audio_blob.bytes)?;
+        get_file(&voice.file_id).map_err(|e| format!("Failed to get file: {}", e))?;
+        let audio_blob = get_blob().ok_or("Failed to get blob")?;
+        text += &openai_transcribe(&audio_blob.bytes)
+            .map_err(|e| format!("Transcription failed: {}", e))?;
     }
-    let answer = groq_chat(&text, None)?;
+
+    let answer = groq_chat(&text, None)
+        .map_err(|e| format!("Groq chat failed: {}", e))?;
+
     send_message(&SendMessageParams {
         chat_id: message.chat_id,
         text: answer,
         voice: None,
-    })
+    }).map_err(|e| format!("Failed to send message: {}", e))?;
+
+    Ok(())
 }
 
 fn handle_message(_our: &Address) -> anyhow::Result<()> {
@@ -41,15 +51,21 @@ fn handle_message(_our: &Address) -> anyhow::Result<()> {
 call_init!(init);
 fn init(our: Address) {
     let results = [
-        ("Groq API key", register_groq_api_key("<KEY>")),
-        ("STT API key", register_stt_key("<KEY>")),
+        //("Groq API key", register_groq_api_key("<KEY>")),
+        //("STT API key", register_stt_key("<KEY>")),
         ("Telegram token", register_token("<KEY>").map(|_| "Success".to_string())),
         ("Subscription", subscribe().map(|_| "Success".to_string())),
     ];
 
     for (name, result) in results {
-        println!("{} registration result: {:?}", name, result);
+        match result {
+            Ok(msg) => println!("{} registration result: Success - {}", name, msg),
+            Err(e) => println!("{} registration failed: {:?}", name, e),
+        }
     }
+    //for (name, result) in results {
+    //    println!("{} registration result: {:?}", name, result);
+    //}
 
     loop {
         if let Err(e) = handle_message(&our) {

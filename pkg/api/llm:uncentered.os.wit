@@ -1,0 +1,180 @@
+interface llm {
+    variant llm-request {
+        register-openai-api-key(string),
+        register-groq-api-key(string),
+        register-claude-api-key(string),
+        embedding(embedding-request),
+        openai-chat(chat-request),
+        groq-chat(chat-request),
+        chat-image(chat-image-request),
+        claude-chat(claude-chat-request),
+    }
+    
+    variant llm-response {
+        register-openai-api-key(result<string, string>),
+        register-groq-api-key(result<string, string>),
+        register-claude-api-key(result<string, string>),
+        embedding(result<embedding-response, string>),
+        openai-chat(result<chat-response, string>),
+        groq-chat(result<chat-response, string>),
+        chat-image(result<chat-response, string>),
+        claude-chat(result<claude-chat-response, string>),
+    }
+
+    record embedding-request {
+        input: list<string>,
+        model: string,
+    }
+
+    record chat-request {
+        model: string,
+        messages: list<message>,
+        frequency-penalty: option<float64>,
+        logit-bias: option<list<tuple<string, s32>>>,
+        logprobs: option<bool>,
+        top-logprobs: option<s32>,
+        max-tokens: option<s32>,
+        n: option<s32>,
+        presence-penalty: option<float64>,
+        response-format: option<response-format>,
+        seed: option<s32>,
+        stop: option<stop>,
+        %stream: option<bool>,
+        temperature: option<float64>,
+        top-p: option<float64>,
+        tools: option<list<string>>,
+        tool-choice: option<tool-choice>,
+        user: option<string>,
+    }
+
+    record chat-image-request {
+        model: string,
+        messages: list<chat-image-message>,
+        frequency-penalty: option<float64>,
+        logit-bias: option<list<tuple<string, s32>>>,
+        logprobs: option<bool>,
+        top-logprobs: option<s32>,
+        max-tokens: option<s32>,
+        n: option<s32>,
+        presence-penalty: option<float64>,
+        response-format: option<response-format>,
+        seed: option<s32>,
+        stop: option<stop>,
+        %stream: option<bool>,
+        temperature: option<float64>,
+        top-p: option<float64>,
+        tools: option<list<string>>,
+        tool-choice: option<tool-choice>,
+        user: option<string>,
+    }
+
+    record claude-chat-request {
+        model: string,
+        messages: list<message>,
+        max-tokens: option<s32>,
+    }
+
+    record message {
+        role: string,
+        content: string,
+    }
+
+    record chat-image-message {
+        role: string,
+        content: list<chat-image-content>,
+    }
+
+    record chat-image-content {
+        data-type: string,
+        text: option<string>,
+        image-url: option<image-url>,
+    }
+
+    record image-url {
+        url: string,
+    }
+
+    variant response-format {
+        json-object(string),
+    }
+
+    variant stop {
+        %string(string),
+        array(list<string>),
+    }
+
+    variant tool-choice {
+        none,
+        auto,
+        specific-function(function),
+    }
+
+    record function {
+        name: string,
+    }
+
+    record embedding-response {
+        embeddings: list<list<float32>>,
+    }
+
+    record chat-response {
+        id: option<string>,
+        object: option<string>,
+        created: option<s64>,
+        model: option<string>,
+        system-fingerprint: option<string>,
+        choices: list<choice>,
+        usage: option<openai-usage>,
+    }
+
+    record choice {
+        index: s32,
+        message: message,
+        logprobs: option<string>,
+        finish-reason: string,
+    }
+
+    record openai-usage {
+        prompt-tokens: s32,
+        completion-tokens: option<s32>,
+        total-tokens: s32,
+    }
+
+    record claude-chat-response {
+        content: list<content>,
+        id: string,
+        model: string,
+        role: string,
+        stop-reason: string,
+        stop-sequence: option<string>,
+        data-type: string,
+        usage: claude-usage,
+    }
+
+    record claude-usage {
+        input-tokens: s32,
+        output-tokens: s32,
+    }
+
+    record content {
+        data-type: string,
+        text: string,
+    }
+
+    register-openai-api-key: func(key: string) -> result<string, string>;
+    register-groq-api-key: func(key: string) -> result<string, string>;
+    register-claude-api-key: func(key: string) -> result<string, string>;
+    embedding: func(input: string, model: option<string>) -> result<string, string>;
+    openai-chat: func(input: string, model: option<string>) -> result<string, string>;
+    groq-chat: func(input: string, model: option<string>) -> result<string, string>;
+    claude-chat: func(input: string, model: option<string>) -> result<string, string>;
+}
+
+world llm-uncentered-dot-os-api-v0 {
+    export llm;
+}
+
+world llm-uncentered-dot-os-v0 {
+    import llm;
+    include process-v0;
+}

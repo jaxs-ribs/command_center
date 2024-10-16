@@ -1,6 +1,5 @@
 use std::str::FromStr;
-use kinode_process_lib::{http::Method, http::send_request, println};
-use kinode_process_lib::http::send_request_await_response;
+use kinode_process_lib::{http::Method, http::client::{send_request, send_request_await_response}, println};
 // use kinode_process_lib::println;
 use std::collections::HashMap;
 use std::path::PathBuf;

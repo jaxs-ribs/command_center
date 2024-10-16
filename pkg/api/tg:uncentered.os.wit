@@ -1,0 +1,46 @@
+interface tg {
+    variant tg-request {
+        register-token(string),
+        subscribe,
+        unsubscribe,
+        get-file(string),
+        send-message(send-message-params)
+    }
+
+    variant tg-response {
+        register-token(result<_, string>),
+        subscribe(result<_, string>),
+        unsubscribe(result<_, string>),
+        get-file(result<_, string>), 
+        send-message(result<_, string>)
+    }
+
+    record send-message-params {
+        chat-id: s64, 
+        text: string,
+        voice: option<voice>,
+    }
+
+    record voice {
+        file-id: string,
+        file-unique-id: string,
+        duration: u32,
+        mime-type: option<string>,
+        file-size: option<u64>,
+    }
+
+    register-token: func(token: string) -> result<_, string>;
+    subscribe: func() -> result<_, string>;
+    unsubscribe: func() -> result<_, string>;
+    get-file: func(file-id: string) -> result<_, string>;
+    send-message: func(params: send-message-params) -> result<_, string>;
+}
+
+world tg-uncentered-dot-os-api-v0 {
+    export tg;
+}
+
+world tg-uncentered-dot-os-v0 {
+    import tg;
+    include process-v0;
+}

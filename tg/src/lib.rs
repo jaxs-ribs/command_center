@@ -8,8 +8,8 @@ use frankenstein::UpdateContent;
 use frankenstein::{SendMessageParams, TelegramApi};
 use kinode_process_lib::{
     await_message, call_init, get_blob,
-    http::{HttpClientAction, OutgoingHttpRequest},
-    println, Address, LazyLoadBlob, Message, Request, Response,
+    http::client::{HttpClientAction, OutgoingHttpRequest},
+    Address, LazyLoadBlob, Message, Request, Response,
 };
 use std::collections::HashMap;
 

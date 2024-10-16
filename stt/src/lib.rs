@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use crate::kinode::process::stt::{SttRequest, SttResponse};
 use kinode_process_lib::{
     await_message, call_init, get_blob, println, Address, Message, Request,
-    Response, http::{self, HttpClientAction, OutgoingHttpRequest},
+    Response, http::client::{HttpClientAction, OutgoingHttpRequest},
+    http
 };
 
 pub const BASE_URL: &str = "https://api.openai.com/v1/audio/transcriptions";
@@ -61,6 +62,8 @@ pub fn openai_whisper_request(audio_bytes: &[u8], openai_key: &str) -> anyhow::R
         .blob_bytes(body)
         .expects_response(30)
         .send()
+        .map_err(|e| anyhow::anyhow!("Failed to send request: {}", e))?;
+    Ok(())
 }
 
 fn register_openai_api_key(api_key: &str, state: &mut Option<State>) -> anyhow::Result<()> {
@@ -129,7 +132,9 @@ pub fn handle_openai_whisper_response() -> anyhow::Result<()> {
     };
 
     let body = serde_json::to_vec(&response)?;
-    Response::new().body(body).send()
+    // TODO: temp for compiling
+    Response::new().body(body).send()?;
+    Ok(())
 }
 
 call_init!(init);
