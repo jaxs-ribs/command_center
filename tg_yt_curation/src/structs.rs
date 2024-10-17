@@ -20,9 +20,9 @@ pub enum TelegramYoutubeCurationResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TGYoutubeCurationMessage {
-	pub share_link: String, //This would have video_id and start_time, but not end_time
+	pub share_link: String, 
     pub start_time: Option<String>,
-	pub duration: Option<String>, // default 30s
+	pub duration: Option<String>, 
 	pub curation_quote: Option<String>, 
 }
 
@@ -35,6 +35,7 @@ pub struct YoutubeEmbedParams {
 
 pub struct YoutubeEmbedSrc{
     pub src: String,
+    pub date: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -64,22 +65,6 @@ pub fn load_state() -> State {
         }
     })
 }
-//pub fn load_state() -> State {
-    //get_typed_state::<State, _, serde_json::Error>(|bytes| {
-        //serde_json::from_slice(bytes).map_err(|e| {
-            //println!("TG YT Curator: Deserialization error: {:?}", e);
-            //e
-        //})
-    //})
-    //.unwrap_or_else(|| {
-        //println!("TG YT Curator: No saved state found or deserialization failed, using default State");
-        //State {
-            //pending_codes: HashMap::new(),
-            //address_book: HashMap::new(),
-        //}
-    //})
-//}
-
 
 impl State {
     pub fn save(&self) -> anyhow::Result<()> {

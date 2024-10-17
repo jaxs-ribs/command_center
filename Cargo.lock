@@ -2550,6 +2550,7 @@ dependencies = [
 >>>>>>> d2f0902 ( I AM GAY)
  "serde",
  "serde_json",
+ "sha2",
  "wit-bindgen",
 ]
 

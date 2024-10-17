@@ -1,5 +1,6 @@
 use regex::Regex;
-use crate::structs::YoutubeEmbedParams;
+use sha2::{Sha256, Digest};
+use crate::structs::{YoutubeEmbedParams};
 
 pub fn parse_register_command(text: &str) -> Option<String> {
     let parts: Vec<&str> = text.split_whitespace().collect();
@@ -59,10 +60,32 @@ pub fn create_youtube_embed_src(params: &YoutubeEmbedParams) -> String {
     if let Some(end_time) = &params.end_time {
         url.push_str(&format!("&end={}", end_time));
     }
+    //// Add start time if it's not empty or "0"
+    //if !params.start_time.is_empty() && params.start_time != "0" {
+    //    url.push_str(&format!("&start={}", params.start_time));
+    //}
+    
+    //// Add end time if it's not empty
+    //if !params.end_time.is_empty() {
+    //    url.push_str(&format!("&end={}", params.end_time));
+    //}
     
     url
 }
 
 pub fn is_curation_message(text: &str) -> bool {
     text.contains("youtu.be/") || text.contains("youtube.com/")
+}
+
+
+// video_id+<optional>start_time+<optional>end_time
+pub fn hash_youtube_curation(youtube_embed_params: &YoutubeEmbedParams) -> String {
+    let mut hasher = Sha256::new();
+    let hash_input = format!("{}+{}+{}", 
+        youtube_embed_params.video_id,
+        youtube_embed_params.start_time.as_deref().unwrap_or(""),
+        youtube_embed_params.end_time.as_deref().unwrap_or("")
+    );
+    hasher.update(hash_input.as_bytes());
+    format!("{:x}", hasher.finalize())
 }
