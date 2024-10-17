@@ -84,7 +84,7 @@ fn handle_start() -> String {
 
 fn handle_register(our: &Address, address: &str, state: &mut State) -> String {
     println!("TG YT Curator: Registering address: {}", address);
-    //let fake_code: u64 = 666666;
+    //let code: u64 = 666666;
     let code: u64 = rand::thread_rng().gen_range(0..1_000_000);
     println!("TG YT Curator: Code is {}", code);
     
@@ -118,6 +118,7 @@ fn handle_authenticate(our: &Address, code: u64, state: &mut State) -> String {
         "No pending registration found. Please start with the register command.".to_string()
     }
 }
+
 fn handle_curate_youtube(our: &Address, msg: String, state: &mut State) -> String {
     if !state.address_book.contains_key(&our.node) {
         return "You are not registered. Please register first, boi.".to_string();

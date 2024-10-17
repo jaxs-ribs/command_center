@@ -1,9 +1,9 @@
 use crate::kinode::process::{
-    llm::{groq_chat, register_groq_api_key},
-    stt::{openai_transcribe, register_api_key as register_stt_key},
-    tg::{get_file, register_token, send_message, subscribe, SendMessageParams, TgRequest},
+    // llm::{groq_chat, register_groq_api_key},
+    // stt::{openai_transcribe, register_api_key as register_stt_key},
+    tg::{register_token, subscribe},
 };
-use kinode_process_lib::{await_message, call_init, get_blob, println, Address, Message};
+use kinode_process_lib::{await_message, call_init, println, Address, Message};
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -12,30 +12,30 @@ wit_bindgen::generate!({
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
 
-fn handle_request(body: &[u8]) -> Result<(), String> {
-    let message = serde_json::from_slice::<TgRequest>(body)
-        .map_err(|e| format!("Failed to parse TgRequest: {}", e))?;
+fn handle_request(_body: &[u8]) -> Result<(), String> {
+    // let message = serde_json::from_slice::<TgRequest>(body)
+    //     .map_err(|e| format!("Failed to parse TgRequest: {}", e))?;
 
-    let TgRequest::SendMessage(message) = message else {
-        return Err("Unexpected request type".to_string());
-    };
+    // let TgRequest::SendMessage(message) = message else {
+    //     return Err("Unexpected request type".to_string());
+    // };
 
-    let mut text = message.text.clone();
-    if let Some(voice) = message.voice {
-        get_file(&voice.file_id).map_err(|e| format!("Failed to get file: {}", e))?;
-        let audio_blob = get_blob().ok_or("Failed to get blob")?;
-        text += &openai_transcribe(&audio_blob.bytes)
-            .map_err(|e| format!("Transcription failed: {}", e))?;
-    }
+    // let mut text = message.text.clone();
+    // if let Some(voice) = message.voice {
+    //     get_file(&voice.file_id).map_err(|e| format!("Failed to get file: {}", e))?;
+    //     let audio_blob = get_blob().ok_or("Failed to get blob")?;
+    //     text += &openai_transcribe(&audio_blob.bytes)
+    //         .map_err(|e| format!("Transcription failed: {}", e))?;
+    // }
 
-    let answer = groq_chat(&text, None)
-        .map_err(|e| format!("Groq chat failed: {}", e))?;
+    // let answer = groq_chat(&text, None)
+    //     .map_err(|e| format!("Groq chat failed: {}", e))?;
 
-    send_message(&SendMessageParams {
-        chat_id: message.chat_id,
-        text: answer,
-        voice: None,
-    }).map_err(|e| format!("Failed to send message: {}", e))?;
+    // send_message(&SendMessageParams {
+    //     chat_id: message.chat_id,
+    //     text: answer,
+    //     voice: None,
+    // }).map_err(|e| format!("Failed to send message: {}", e))?;
 
     Ok(())
 }
@@ -63,9 +63,6 @@ fn init(our: Address) {
             Err(e) => println!("{} registration failed: {:?}", name, e),
         }
     }
-    //for (name, result) in results {
-    //    println!("{} registration result: {:?}", name, result);
-    //}
 
     loop {
         if let Err(e) = handle_message(&our) {

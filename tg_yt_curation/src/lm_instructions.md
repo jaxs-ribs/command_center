@@ -27,7 +27,7 @@ Follow these steps carefully:
      - If there's no comment, set to `None`
 7. You are an expert in understanding youtube URLs also and this knowledge will make this task easy.
 
-8. Answer only with the struct that you generate.
+8. Answer only with the struct that you generate. Return your response as a valid JSON string that can be directly parsed into a TGYoutubeCurationMessage struct.
 
 Example 1:
 Input:
