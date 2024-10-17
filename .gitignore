@@ -8,3 +8,5 @@ pkg/*.wasm
 */process_env
 *API*
 *TOKEN*
+GROQ_API_KEY
+TG_TOKEN
