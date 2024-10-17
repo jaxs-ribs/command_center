@@ -108,6 +108,7 @@ fn handle_authenticate(our: &Address, code: u64, state: &mut State) -> String {
         "No pending registration found. Please start with the register command.".to_string()
     }
 }
+
 fn handle_curate_youtube(our: &Address, msg: String, state: &mut State) -> String {
     if !state.address_book.contains_key(&our.node) {
         return "You are not registered. Please register first, boi.".to_string();
