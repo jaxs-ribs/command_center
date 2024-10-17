@@ -108,7 +108,6 @@ fn handle_authenticate(our: &Address, code: u64, state: &mut State) -> String {
         "No pending registration found. Please start with the register command.".to_string()
     }
 }
-
 fn handle_curate_youtube(our: &Address, msg: String, state: &mut State) -> String {
     if !state.address_book.contains_key(&our.node) {
         return "You are not registered. Please register first, boi.".to_string();
@@ -139,21 +138,23 @@ fn curation_msg_to_youtube_curation(telegram_msg: &str) -> anyhow::Result<Youtub
     let struct_from_lm: TGYoutubeCurationMessage = use_groq(telegram_msg)?;
     println!("TG YT Curator: Youtube curation message: {:?}", struct_from_lm);
 
-    let start_time = struct_from_lm.start_time.unwrap_or_default().parse::<u64>().unwrap_or(0);
-    let duration = struct_from_lm.duration.unwrap_or_else(|| "30".to_string()).parse::<u64>().unwrap_or(30);
-    let end_time = start_time + duration;
+    let start_time = struct_from_lm.start_time.map(|s| s.parse::<u64>().unwrap_or(0));
+    let duration = struct_from_lm.duration.map(|d| d.parse::<u64>().unwrap_or(30)).unwrap_or(30);
+    let end_time = start_time.map(|s| s + duration);
 
     let embed_params = YoutubeEmbedParams {
         video_id: extract_youtube_video_id(&struct_from_lm.share_link).unwrap_or_default().to_string(),
-        start_time: start_time.to_string(),
-        end_time: end_time.to_string(),
+        start_time: start_time.map(|s| s.to_string()),
+        end_time: end_time.map(|e| e.to_string()),
     };
     println!("TG YT Curator: Youtube embed params: {:?}", embed_params);
 
     let embed_src = create_youtube_embed_src(&embed_params);
     println!("TG YT Curator: Youtube embed src: {:?}", embed_src);
 
-    Ok(YoutubeCuration { embed_src, curation_quote: struct_from_lm.curation_quote })
+    let curation_quote = struct_from_lm.curation_quote.filter(|q| !q.trim().is_empty());
+
+    Ok(YoutubeCuration { embed_src, curation_quote })
 }
 
 call_init!(init);

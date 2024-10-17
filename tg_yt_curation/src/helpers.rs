@@ -49,13 +49,15 @@ pub fn create_youtube_embed_src(params: &YoutubeEmbedParams) -> String {
     url.push_str("?cc_load_policy=1&color=white");
     
     // Add start time if it's not empty or "0"
-    if !params.start_time.is_empty() && params.start_time != "0" {
-        url.push_str(&format!("&start={}", params.start_time));
+    if let Some(start_time) = &params.start_time {
+        if start_time != "0" {
+            url.push_str(&format!("&start={}", start_time));
+        }
     }
     
-    // Add end time if it's not empty
-    if !params.end_time.is_empty() {
-        url.push_str(&format!("&end={}", params.end_time));
+    // Add end time if it's present
+    if let Some(end_time) = &params.end_time {
+        url.push_str(&format!("&end={}", end_time));
     }
     
     url

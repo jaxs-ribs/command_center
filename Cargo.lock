@@ -2544,7 +2544,10 @@ dependencies = [
  "kinode_process_lib",
  "process_macros",
  "rand",
+<<<<<<< HEAD
  "regex",
+=======
+>>>>>>> d2f0902 ( I AM GAY)
  "serde",
  "serde_json",
  "wit-bindgen",

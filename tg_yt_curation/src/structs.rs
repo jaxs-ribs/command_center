@@ -29,8 +29,8 @@ pub struct TGYoutubeCurationMessage {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct YoutubeEmbedParams {
 	pub video_id: String,
-	pub start_time: String,
-	pub end_time: String,
+	pub start_time: Option<String>,
+	pub end_time: Option<String>,
 }
 
 pub struct YoutubeEmbedSrc{
