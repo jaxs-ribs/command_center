@@ -12,7 +12,6 @@ wit_bindgen::generate!({
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
 
-<<<<<<< HEAD
 fn handle_request(_body: &[u8]) -> Result<(), String> {
     // let message = serde_json::from_slice::<TgRequest>(body)
     //     .map_err(|e| format!("Failed to parse TgRequest: {}", e))?;
@@ -37,32 +36,6 @@ fn handle_request(_body: &[u8]) -> Result<(), String> {
     //     text: answer,
     //     voice: None,
     // }).map_err(|e| format!("Failed to send message: {}", e))?;
-=======
-fn handle_request(body: &[u8]) -> Result<(), String> {
-    let message = serde_json::from_slice::<TgRequest>(body)
-        .map_err(|e| format!("Failed to parse TgRequest: {}", e))?;
-
-    let TgRequest::SendMessage(message) = message else {
-        return Err("Unexpected request type".to_string());
-    };
-
-    let mut text = message.text.clone();
-    if let Some(voice) = message.voice {
-        get_file(&voice.file_id).map_err(|e| format!("Failed to get file: {}", e))?;
-        let audio_blob = get_blob().ok_or("Failed to get blob")?;
-        text += &openai_transcribe(&audio_blob.bytes)
-            .map_err(|e| format!("Transcription failed: {}", e))?;
-    }
-
-    let answer = groq_chat(&text, None)
-        .map_err(|e| format!("Groq chat failed: {}", e))?;
-
-    send_message(&SendMessageParams {
-        chat_id: message.chat_id,
-        text: answer,
-        voice: None,
-    }).map_err(|e| format!("Failed to send message: {}", e))?;
->>>>>>> d2f0902 ( I AM GAY)
 
     Ok(())
 }
