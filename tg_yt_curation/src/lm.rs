@@ -76,23 +76,32 @@ pub fn use_groq(msg: &str) -> anyhow::Result<TGYoutubeCurationMessage> {
     let blob = get_blob().ok_or_else(|| anyhow::anyhow!("Failed to get response blob"))?;
 
     let response: Value = serde_json::from_slice(&blob.bytes)?;
-    println!("Raw response: {:?}", response);
+    println!("Raw response: {:#?}", response);
 
     let content = response["choices"][0]["message"]["content"]
         .as_str()
         .ok_or_else(|| {
-            println!("Failed to extract content. Response structure: {:?}", response);
+            println!("Failed to extract content. Response structure: {:#?}", response);
             anyhow::anyhow!("Failed to extract content from response")
         })?;
 
     println!("Extracted content: {}", content);
 
+    let json_start = content.find('{').ok_or_else(|| anyhow::anyhow!("Failed to find JSON start"))?;
+    let json_end = content.rfind('}').ok_or_else(|| anyhow::anyhow!("Failed to find JSON end"))?;
+    let json_str = &content[json_start..=json_end];
+
+    let curation_message: TGYoutubeCurationMessage = serde_json::from_str(json_str)
+    .map_err(|e| {
+        println!("Failed to parse content into TGYoutubeCurationMessage. Error: {:?}", e);
+        anyhow::anyhow!("Failed to parse content into TGYoutubeCurationMessage: {}", e)
+    })?;
     // Parse the content string into a TGYoutubeCurationMessage
-    let curation_message: TGYoutubeCurationMessage = serde_json::from_str(content)
-        .map_err(|e| {
-            println!("Failed to parse content into TGYoutubeCurationMessage. Error: {:?}", e);
-            anyhow::anyhow!("Failed to parse content into TGYoutubeCurationMessage: {}", e)
-        })?;
+    //let curation_message: TGYoutubeCurationMessage = serde_json::from_str(content)
+    //    .map_err(|e| {
+    //        println!("Failed to parse content into TGYoutubeCurationMessage. Error: {:?}", e);
+    //        anyhow::anyhow!("Failed to parse content into TGYoutubeCurationMessage: {}", e)
+    //    })?;
 
     Ok(curation_message)
 }

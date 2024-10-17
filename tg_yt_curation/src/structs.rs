@@ -33,9 +33,13 @@ pub struct YoutubeEmbedParams {
 	pub end_time: String,
 }
 
+pub struct YoutubeEmbedSrc{
+    pub src: String,
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct YoutubeCuration {
-	pub embed_params: YoutubeEmbedParams,
+	pub embed_src: String,
     pub curation_quote: Option<String>,
 }
 

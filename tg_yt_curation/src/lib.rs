@@ -13,7 +13,14 @@ use structs::{State,TGMessage, TGYoutubeCurationMessage,YoutubeCuration,YoutubeE
 };
 
 mod helpers;
-use helpers::{parse_start_command,parse_register_command,parse_six_digit_number,is_curation_message};
+use helpers::{
+    extract_youtube_video_id,
+    parse_start_command,
+    parse_register_command,
+    parse_six_digit_number,
+    is_curation_message,
+    create_youtube_embed_src
+};
 
 mod lm;
 use lm::use_groq;
@@ -27,7 +34,6 @@ wit_bindgen::generate!({
     generate_unused_types: true,
     additional_derives: [serde::Deserialize, serde::Serialize, process_macros::SerdeJsonInto],
 });
-
 
 fn handle_message(
     our: &Address,
@@ -51,6 +57,7 @@ fn handle_message(
         _ => "I don't understand that command.".to_string(),
     };
 
+    // send response from commands above to user 
     let _ = send_message(&SendMessageParams {
         chat_id: tg_message.chat_id,
         text: response_text,
@@ -60,26 +67,9 @@ fn handle_message(
     Ok(())
 }
 
-impl TryFrom<&str> for TGMessage {
-    type Error = anyhow::Error;
-
-    fn try_from(text: &str) -> Result<Self, Self::Error> {
-        if let Some(_) = parse_start_command(text) {
-            Ok(TGMessage::Start())
-        } else if let Some(address) = parse_register_command(text) {
-            Ok(TGMessage::Register(address))
-        } else if let Some(code) = parse_six_digit_number(text) {
-            Ok(TGMessage::Authenticate(code))
-        } else if is_curation_message(text) {
-           Ok(TGMessage::CurationMSGToEmbedLinkRequest(text.to_string())) 
-        } else {
-            Ok(TGMessage::Unknown(text.to_string()))
-        }
-    }
-}
 
 fn handle_start() -> String {
-    "Welcome to the TG YT Curator!\nPlease start the registration process by entering: \n\n'/register your_node.os'\n\n".to_string()
+    "Please start the registration process by entering: \n\n'/register your_node.os'\n\n".to_string()
 }
 
 fn handle_register(our: &Address, address: &str, state: &mut State) -> String {
@@ -124,7 +114,7 @@ fn handle_curate_youtube(our: &Address, msg: String, state: &mut State) -> Strin
         return "You are not registered. Please register first, boi.".to_string();
     }
 
-    match curation_msg_to_embed_link(&msg) {
+    match curation_msg_to_youtube_curation(&msg) {
         Ok(youtube_curation) => {
             let address: (&str, &str, &str, &str) = (our.node.as_str(), "hq", "hq", "uncentered.os");
             let request_body = serde_json::to_vec(&youtube_curation).unwrap();
@@ -143,7 +133,7 @@ fn handle_curate_youtube(our: &Address, msg: String, state: &mut State) -> Strin
     }
 }
 
-fn curation_msg_to_embed_link(telegram_msg: &str) -> anyhow::Result<YoutubeCuration> {
+fn curation_msg_to_youtube_curation(telegram_msg: &str) -> anyhow::Result<YoutubeCuration> {
     println!("TG YT Curator: Telegram msg: {:?}", telegram_msg);
 
     let struct_from_lm: TGYoutubeCurationMessage = use_groq(telegram_msg)?;
@@ -154,13 +144,16 @@ fn curation_msg_to_embed_link(telegram_msg: &str) -> anyhow::Result<YoutubeCurat
     let end_time = start_time + duration;
 
     let embed_params = YoutubeEmbedParams {
-        video_id: struct_from_lm.share_link.split("v=").nth(1).unwrap_or_default().to_string(),
+        video_id: extract_youtube_video_id(&struct_from_lm.share_link).unwrap_or_default().to_string(),
         start_time: start_time.to_string(),
         end_time: end_time.to_string(),
     };
     println!("TG YT Curator: Youtube embed params: {:?}", embed_params);
 
-    Ok(YoutubeCuration { embed_params, curation_quote: struct_from_lm.curation_quote })
+    let embed_src = create_youtube_embed_src(&embed_params);
+    println!("TG YT Curator: Youtube embed src: {:?}", embed_src);
+
+    Ok(YoutubeCuration { embed_src, curation_quote: struct_from_lm.curation_quote })
 }
 
 call_init!(init);
@@ -180,6 +173,24 @@ fn init(our: Address) {
                 Ok(_) => {}
                 Err(e) => println!("got error while handling message: {e:?}"),
             }
+        }
+    }
+}
+
+impl TryFrom<&str> for TGMessage {
+    type Error = anyhow::Error;
+
+    fn try_from(text: &str) -> Result<Self, Self::Error> {
+        if let Some(_) = parse_start_command(text) {
+            Ok(TGMessage::Start())
+        } else if let Some(address) = parse_register_command(text) {
+            Ok(TGMessage::Register(address))
+        } else if let Some(code) = parse_six_digit_number(text) {
+            Ok(TGMessage::Authenticate(code))
+        } else if is_curation_message(text) {
+           Ok(TGMessage::CurationMSGToEmbedLinkRequest(text.to_string())) 
+        } else {
+            Ok(TGMessage::Unknown(text.to_string()))
         }
     }
 }
