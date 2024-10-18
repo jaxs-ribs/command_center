@@ -30,7 +30,7 @@
         "process_name": "tg_yt_curation",
         "process_wasm_path": "/tg_yt_curation.wasm",
         "on_exit": "None",
-        "request_networking": false,
+        "request_networking": true,
         "request_capabilities": [
             "http_server:distro:sys",
             "http_client:distro:sys"

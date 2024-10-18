@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use kinode_process_lib::{set_state, get_typed_state};
+use kinode_process_lib::{set_state, get_typed_state, clear_state};
 use std::collections::HashMap;
 
 
@@ -18,14 +18,16 @@ pub enum TelegramYoutubeCurationResponse {
     Error(String),
 }
 
+// after groq
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TGYoutubeCurationMessage {
 	pub share_link: String, 
     pub start_time: Option<String>,
 	pub duration: Option<String>, 
-	pub curation_quote: Option<String>, 
+	pub curation_quote: Option<String>,  // <---
 }
 
+// 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct YoutubeEmbedParams {
 	pub video_id: String,
@@ -42,6 +44,21 @@ pub struct YoutubeEmbedSrc{
 pub struct YoutubeCuration {
 	pub embed_src: String,
     pub curation_quote: Option<String>,
+    pub post_entry: PostEntry,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SetPostRequest {
+    pub stream_name: String,
+    pub site: String,
+    pub posts: Vec<PostEntry>,
+    pub combined_uuid: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PostEntry {
+    pub post_id: String,
+    pub post_json: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -78,5 +95,10 @@ impl State {
                 Err(anyhow::anyhow!("Error serializing state"))
             }
         }
+    }
+
+    pub fn clear(&mut self) {
+        clear_state();
+        println!("TG YT Curator: State cleared");
     }
 }

@@ -1,18 +1,3 @@
-//use crate::structs::TGYoutubeCurationMessage;
-//
-//pub fn use_groq(_msg: &str) -> anyhow::Result<TGYoutubeCurationMessage> {
-//    // Return a fake TGYoutubeCurationMessage
-//    Ok(TGYoutubeCurationMessage {
-//        share_link: "https://youtu.be/dQw4w9WgXcQ?t=0".to_string(),
-//        start_time: Some("0".to_string()),
-//        duration: Some("30".to_string()),
-//        curation_quote: Some("Never gonna give you up!".to_string()),
-//    })
-//}
-
-// ... rest of the existing code ...
-
-////how should I design this llm instruction for getting the youtube embed params?
 use kinode_process_lib::{
     println,
     get_blob, Request, LazyLoadBlob,
@@ -24,10 +9,8 @@ use crate::structs::TGYoutubeCurationMessage;
 
 const GROQ_API_URL: &str = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_API_KEY: &str = include_str!("../../GROQ_API_KEY");
-//const example_user_tg_message: &str = "https://youtu.be/4ol3dDzgHrs?t=2&si=tAlasldCadj\n\nduration 30s\n\nhow will they be able to keep this streak up? Go cubs!";
 
 const LM_INSTRUCTIONS: &str = include_str!("lm_instructions.md");
-
 
 pub fn use_groq(msg: &str) -> anyhow::Result<TGYoutubeCurationMessage> {
     let request_body = serde_json::json!({
@@ -96,12 +79,6 @@ pub fn use_groq(msg: &str) -> anyhow::Result<TGYoutubeCurationMessage> {
         println!("Failed to parse content into TGYoutubeCurationMessage. Error: {:?}", e);
         anyhow::anyhow!("Failed to parse content into TGYoutubeCurationMessage: {}", e)
     })?;
-    // Parse the content string into a TGYoutubeCurationMessage
-    //let curation_message: TGYoutubeCurationMessage = serde_json::from_str(content)
-    //    .map_err(|e| {
-    //        println!("Failed to parse content into TGYoutubeCurationMessage. Error: {:?}", e);
-    //        anyhow::anyhow!("Failed to parse content into TGYoutubeCurationMessage: {}", e)
-    //    })?;
 
     Ok(curation_message)
 }

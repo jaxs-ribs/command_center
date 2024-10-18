@@ -1,6 +1,6 @@
 use regex::Regex;
 use sha2::{Sha256, Digest};
-use crate::structs::{YoutubeEmbedParams};
+use crate::structs::{YoutubeEmbedParams, SetPostRequest, PostEntry};
 
 pub fn parse_register_command(text: &str) -> Option<String> {
     let parts: Vec<&str> = text.split_whitespace().collect();
@@ -60,23 +60,12 @@ pub fn create_youtube_embed_src(params: &YoutubeEmbedParams) -> String {
     if let Some(end_time) = &params.end_time {
         url.push_str(&format!("&end={}", end_time));
     }
-    //// Add start time if it's not empty or "0"
-    //if !params.start_time.is_empty() && params.start_time != "0" {
-    //    url.push_str(&format!("&start={}", params.start_time));
-    //}
-    
-    //// Add end time if it's not empty
-    //if !params.end_time.is_empty() {
-    //    url.push_str(&format!("&end={}", params.end_time));
-    //}
-    
     url
 }
 
 pub fn is_curation_message(text: &str) -> bool {
     text.contains("youtu.be/") || text.contains("youtube.com/")
 }
-
 
 // video_id+<optional>start_time+<optional>end_time
 pub fn hash_youtube_curation(youtube_embed_params: &YoutubeEmbedParams) -> String {
@@ -88,4 +77,20 @@ pub fn hash_youtube_curation(youtube_embed_params: &YoutubeEmbedParams) -> Strin
     );
     hasher.update(hash_input.as_bytes());
     format!("{:x}", hasher.finalize())
+}
+
+pub fn create_post_entry(youtube_embed_params: &YoutubeEmbedParams) -> PostEntry {
+    PostEntry {
+        post_id: youtube_embed_params.video_id.clone(),
+        post_json: format!("{:?}", youtube_embed_params),
+    }
+}
+
+pub fn create_set_post_request(combined_uuid: &str, node: &str, post_entry: &PostEntry) -> SetPostRequest {
+    SetPostRequest {
+        stream_name: format!("{}-youtube", node),
+        site: "youtubeVideo".to_string(),
+        posts: vec![post_entry.clone()],
+        combined_uuid: combined_uuid.to_string(),
+    }
 }

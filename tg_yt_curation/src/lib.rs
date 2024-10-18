@@ -19,14 +19,16 @@ use helpers::{
     parse_register_command,
     parse_six_digit_number,
     is_curation_message,
-    create_youtube_embed_src
+    hash_youtube_curation,
+    create_youtube_embed_src,
+    create_post_entry,
+    create_set_post_request,
 };
 
 mod lm;
 use lm::use_groq;
 
 const TG_TOKEN: &str = include_str!("../../TG_TOKEN");
-//const GROQ_API_KEY: &str = include_str!("../../GROQ_API_KEY");
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -36,7 +38,6 @@ wit_bindgen::generate!({
 });
 
 fn handle_message(
-    our: &Address,
     message: &Message,
     state: &mut State,
 ) -> anyhow::Result<()> {
@@ -48,13 +49,14 @@ fn handle_message(
         return Err(anyhow::anyhow!("unexpected request"));
     };
 
+    let chat_id = tg_message.chat_id.to_string();
     let command = TGMessage::try_from(tg_message.text.as_str())?;
     let response_text = match command {
         TGMessage::Start() => handle_start(),
-        TGMessage::Register(address) => handle_register(our, &address, state),
-        TGMessage::Authenticate(code) => handle_authenticate(our, code, state),
-        TGMessage::CurationMSGToEmbedLinkRequest(msg) => handle_curate_youtube(our, msg, state),
-        _ => "I don't understand that command.".to_string(),
+        TGMessage::Register(address) => handle_register(&chat_id, &address, state),
+        TGMessage::Authenticate(code) => handle_authenticate(&chat_id, code, state),
+        TGMessage::CurationMSGToEmbedLinkRequest(msg) => handle_curate_youtube(&chat_id, msg, state),
+        _ => format!("I don't understand that command: \"{}\"", tg_message.text),
     };
 
     // send response from commands above to user 
@@ -72,21 +74,21 @@ fn handle_start() -> String {
     "Please start the registration process by entering: \n\n'/register your_node.os'\n\n".to_string()
 }
 
-fn handle_register(our: &Address, address: &str, state: &mut State) -> String {
-    println!("TG YT Curator: Registering address: {}", address);
+fn handle_register(chat_id: &str, address: &str, state: &mut State) -> String {
+    println!("TG YT Curator: Registering address: {} for chat_id: {}", address, chat_id);
+
     //let code: u64 = 666666;
-    let code: u64 = rand::thread_rng().gen_range(0..1_000_000);
+    let code: u64 = rand::thread_rng().gen_range(100_000..1_000_000);
     println!("TG YT Curator: Code is {}", code);
     
     match send_code_to_terminal(address, &code) {
         Ok(_) => {
-            state.pending_codes.insert(our.node.clone(), (address.to_string(), code));
+            state.pending_codes.insert(chat_id.to_string(), (address.to_string(), code));
             "Registration code sent to your terminal. Please enter the code to complete registration.".to_string()
         },
         Err(_) => "Failed to send registration code. Please ensure your Kinode address is correct and your node is online.".to_string(),
     }
 }
-
 fn send_code_to_terminal(kinode_address: &str, code: &u64) -> anyhow::Result<()> {
     let address: (&str, &str, &str, &str) = (kinode_address, "hi", "terminal", "sys");
     Ok(Request::to(address)
@@ -94,12 +96,12 @@ fn send_code_to_terminal(kinode_address: &str, code: &u64) -> anyhow::Result<()>
         .send()?)
 }
 
-fn handle_authenticate(our: &Address, code: u64, state: &mut State) -> String {
-    println!("TG YT Curator: Received auth code: {}", code);
-    if let Some((kinode_address, expected_code)) = state.pending_codes.get(&our.node) {
+fn handle_authenticate(chat_id: &str, code: u64, state: &mut State) -> String {
+    println!("TG YT Curator: Received auth code: {} for chat_id: {}", code, chat_id);
+    if let Some((kinode_address, expected_code)) = state.pending_codes.get(chat_id) {
         if code == *expected_code {
-            state.address_book.insert(our.node.clone(), kinode_address.clone());
-            state.pending_codes.remove(&our.node);
+            state.address_book.insert(chat_id.to_string(), kinode_address.clone());
+            state.pending_codes.remove(&chat_id.to_string());
             "Authentication successful. You are now registered.".to_string()
         } else {
             "Incorrect code. Please try again.".to_string()
@@ -109,17 +111,28 @@ fn handle_authenticate(our: &Address, code: u64, state: &mut State) -> String {
     }
 }
 
-fn handle_curate_youtube(our: &Address, msg: String, state: &mut State) -> String {
-    if !state.address_book.contains_key(&our.node) {
-        return "You are not registered. Please register first, boi.".to_string();
+fn handle_curate_youtube(
+    chat_id: &str, 
+    msg: String, 
+    state: &mut State
+) -> String {
+    if !state.address_book.contains_key(chat_id) {
+        return "You are not registered. Please register first..".to_string();
     }
 
-    match curation_msg_to_youtube_curation(&msg) {
-        Ok(youtube_curation) => {
-            let address: (&str, &str, &str, &str) = (our.node.as_str(), "hq", "hq", "uncentered.os");
-            let request_body = serde_json::to_vec(&youtube_curation).unwrap();
+    let kinode_address = state.address_book.get(chat_id).unwrap();
 
-            println!("TG YT Curator: Request body: {:?}", request_body);
+    match curation_msg_to_youtube_curation(&msg) {
+        Ok((youtube_curation, combined_uuid)) => {
+
+            let set_post_request = create_set_post_request(&combined_uuid, kinode_address, &youtube_curation.post_entry);
+
+            let address: (&str, &str, &str, &str) = (kinode_address.as_str(), "hq", "hq", "uncentered.os");
+            let request_body = serde_json::to_vec(&set_post_request).unwrap();
+
+            println!("TG YT Curator: Address: {:?}", address);
+            println!("TG YT Curator: set_post_request: {:?}", set_post_request);
+            println!("TG YT Curator: request_body: {:?}", request_body);
 
             match Request::to(address)
                 .body(request_body)
@@ -133,21 +146,24 @@ fn handle_curate_youtube(our: &Address, msg: String, state: &mut State) -> Strin
     }
 }
 
-fn curation_msg_to_youtube_curation(telegram_msg: &str) -> anyhow::Result<YoutubeCuration> {
+fn curation_msg_to_youtube_curation(telegram_msg: &str) -> anyhow::Result<(YoutubeCuration, String)> {
     println!("TG YT Curator: Telegram msg: {:?}", telegram_msg);
 
     let struct_from_lm: TGYoutubeCurationMessage = use_groq(telegram_msg)?;
     println!("TG YT Curator: Youtube curation message: {:?}", struct_from_lm);
 
-    let start_time = struct_from_lm.start_time.map(|s| s.parse::<u64>().unwrap_or(0));
-    let duration = struct_from_lm.duration.map(|d| d.parse::<u64>().unwrap_or(30)).unwrap_or(30);
-    let end_time = start_time.map(|s| s + duration);
+    //let start_time = struct_from_lm.start_time.map(|s| s.parse::<u64>().unwrap_or(0));
+    let start_time = struct_from_lm.start_time.unwrap_or_else(|| "0".to_string());
+    let duration = struct_from_lm.duration.unwrap_or_else(|| "30".to_string());
+    let end_time = (start_time.parse::<u64>().unwrap_or(0) + duration.parse::<u64>().unwrap_or(30)).to_string();
 
     let embed_params = YoutubeEmbedParams {
         video_id: extract_youtube_video_id(&struct_from_lm.share_link).unwrap_or_default().to_string(),
-        start_time: start_time.map(|s| s.to_string()),
-        end_time: end_time.map(|e| e.to_string()),
+        start_time: Some(start_time),
+        end_time: Some(end_time),
     };
+
+    let post_entry = create_post_entry(&embed_params);
     println!("TG YT Curator: Youtube embed params: {:?}", embed_params);
 
     let embed_src = create_youtube_embed_src(&embed_params);
@@ -155,8 +171,14 @@ fn curation_msg_to_youtube_curation(telegram_msg: &str) -> anyhow::Result<Youtub
 
     let curation_quote = struct_from_lm.curation_quote.filter(|q| !q.trim().is_empty());
 
-    Ok(YoutubeCuration { embed_src, curation_quote })
+    let combined_uuid = hash_youtube_curation(&embed_params);
+
+    let youtube_curation = YoutubeCuration { embed_src, curation_quote, post_entry};
+
+
+    Ok((youtube_curation, combined_uuid))
 }
+
 
 call_init!(init);
 fn init(our: Address) {
@@ -169,9 +191,12 @@ fn init(our: Address) {
     let _ = subscribe();
 
     loop {
+        println!("TG YT Curator state: {:#?}", state);
+        //state.clear();
+        //println!("TG YT Curator state after clear: {:#?}", state);
         match await_message() {
             Err(send_error) => println!("got SendError: {send_error}"),
-            Ok(ref message) => match handle_message(&our, message, &mut state) {
+            Ok(ref message) => match handle_message(message, &mut state) {
                 Ok(_) => {}
                 Err(e) => println!("got error while handling message: {e:?}"),
             }
