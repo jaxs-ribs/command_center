@@ -73,7 +73,9 @@ fn _get_embedding(input: Vec<String>, model: Option<&str>) -> anyhow::Result<Vec
             return Err(anyhow::anyhow!("Failed to get embedding: {}", e));
         }
         _ => {
-            return Err(anyhow::anyhow!("Failed to get embedding: unexpected response type"));
+            return Err(anyhow::anyhow!(
+                "Failed to get embedding: unexpected response type"
+            ));
         }
     }
 }

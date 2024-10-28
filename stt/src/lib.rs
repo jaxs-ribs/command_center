@@ -4,7 +4,7 @@ use crate::kinode::process::stt::{SttRequest, SttResponse};
 use kinode_process_lib::{
     await_message, call_init, get_blob,
     http::{self, client::HttpClientAction, client::OutgoingHttpRequest},
-    println, Address, Message, Request, Response,
+    kiprintln, Address, Message, Request, Response,
 };
 
 pub const BASE_URL: &str = "https://api.openai.com/v1/audio/transcriptions";

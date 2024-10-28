@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use kinode_process_lib::{get_state, set_state};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct State {
@@ -22,4 +22,3 @@ impl State {
         set_state(&serialized_state);
     }
 }
-

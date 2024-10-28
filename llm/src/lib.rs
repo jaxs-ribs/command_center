@@ -1,11 +1,9 @@
-use crate::kinode::process::llm::{
-    ChatResponse, ClaudeChatResponse, LlmRequest, LlmResponse, 
-};
+use crate::kinode::process::llm::{ChatResponse, ClaudeChatResponse, LlmRequest, LlmResponse};
 use anyhow::Context;
 use kinode_process_lib::{
     await_message, call_init, get_blob,
     http::{client::HttpClientAction, client::OutgoingHttpRequest},
-    println, Address, LazyLoadBlob, ProcessId, Request, Response,
+    kiprintln, Address, LazyLoadBlob, ProcessId, Request, Response,
 };
 use serde::Serialize;
 use std::{collections::HashMap, vec};
@@ -108,16 +106,17 @@ fn handle_chat_image_response() -> anyhow::Result<()> {
 
 fn handle_claude_chat_response() -> anyhow::Result<()> {
     let bytes = get_blob().context("Couldn't get blob")?;
-    let chat_response_wrapper = match serde_json::from_slice::<ClaudeChatResponseWrapper>(bytes.bytes.as_slice()) {
-        Ok(response) => response,
-        Err(e) => {
-            kiprintln!(
-                "Failed to deserialize Claude chat response. Raw bytes: {:?}",
-                String::from_utf8_lossy(&bytes.bytes)
-            );
-            return Err(e.into());
-        }
-    };
+    let chat_response_wrapper =
+        match serde_json::from_slice::<ClaudeChatResponseWrapper>(bytes.bytes.as_slice()) {
+            Ok(response) => response,
+            Err(e) => {
+                kiprintln!(
+                    "Failed to deserialize Claude chat response. Raw bytes: {:?}",
+                    String::from_utf8_lossy(&bytes.bytes)
+                );
+                return Err(e.into());
+            }
+        };
     let chat_response = ClaudeChatResponse::from(chat_response_wrapper);
     let llm_response = LlmResponse::ClaudeChat(Ok(chat_response));
     Response::new()

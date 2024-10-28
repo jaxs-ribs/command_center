@@ -2,7 +2,7 @@ use crate::kinode::process::llm::ClaudeUsage;
 use crate::kinode::process::llm::Content;
 use crate::kinode::process::llm::ImageUrl;
 use crate::kinode::process::llm::{
-    ClaudeChatResponse, EmbeddingResponse, LlmRequest, OpenaiUsage, ChatImageContent
+    ChatImageContent, ClaudeChatResponse, EmbeddingResponse, LlmRequest, OpenaiUsage,
 };
 use serde::Deserialize;
 use serde::Serialize;

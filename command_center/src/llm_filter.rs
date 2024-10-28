@@ -1,5 +1,5 @@
 use crate::kinode::process::llm::groq_chat;
-use kinode_process_lib::println;
+use kinode_process_lib::kiprintln;
 
 const MAX_POSTS: usize = 100;
 
@@ -16,7 +16,7 @@ pub fn filter_posts(rules: Vec<String>, post_contents: Vec<String>) -> Result<Ve
     let base_prompt = base_prompt(rules, post_contents);
 
     let res = match groq_chat(&base_prompt, Some("llama3-groq-70b-8192-tool-use-preview")) {
-    // let res = match groq_chat(&base_prompt, Some("llama-3.1-70b-versatile")) {
+        // let res = match groq_chat(&base_prompt, Some("llama-3.1-70b-versatile")) {
         Ok(res) => res,
         Err(e) => return Err(format!("Error in the groq chat: {}", e)),
     };

@@ -3,7 +3,7 @@ use crate::kinode::process::{
     stt::{openai_transcribe, register_api_key as register_stt_key},
     tg::{get_file, register_token, send_message, subscribe, SendMessageParams, TgRequest},
 };
-use kinode_process_lib::{await_message, call_init, get_blob, println, Address, Message};
+use kinode_process_lib::{await_message, call_init, get_blob, kiprintln Address, Message};
 
 wit_bindgen::generate!({
     path: "target/wit",

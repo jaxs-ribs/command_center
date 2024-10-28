@@ -1,11 +1,11 @@
-use std::str::FromStr;
-use kinode_process_lib::{http::Method, http::client::send_request, println};
+use frankenstein::TelegramApi;
 use kinode_process_lib::http::client::send_request_await_response;
+use kinode_process_lib::{http::client::send_request, http::Method, kiprintln};
+use serde::Deserialize;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
-use serde::Serialize;
-use serde::Deserialize;
-use frankenstein::TelegramApi;
+use std::str::FromStr;
 
 pub fn request_no_wait<T1: serde::ser::Serialize>(
     api_url: &str,
@@ -52,13 +52,12 @@ impl TelegramApi for Api {
             Vec::new()
         };
 
-        // TODO: Zena: This should never happen. We're serving multiple people, this is dangerous 
-        let res = send_request_await_response(Method::GET, url, Some(headers), 30, body)?;  
-        let deserialized: T2 = serde_json::from_slice(&res.body())
-            .map_err(|e| {
-                kiprintln!("Deserialization error: {}", e);
-                anyhow::anyhow!("Failed to deserialize response body: {}", e)
-            })?;
+        // TODO: Zena: This should never happen. We're serving multiple people, this is dangerous
+        let res = send_request_await_response(Method::GET, url, Some(headers), 30, body)?;
+        let deserialized: T2 = serde_json::from_slice(&res.body()).map_err(|e| {
+            kiprintln!("Deserialization error: {}", e);
+            anyhow::anyhow!("Failed to deserialize response body: {}", e)
+        })?;
 
         Ok(deserialized)
     }
@@ -83,4 +82,3 @@ pub fn get_updates_params(current_offset: u32) -> frankenstein::GetUpdatesParams
         allowed_updates: None,
     }
 }
-

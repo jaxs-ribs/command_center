@@ -4,7 +4,7 @@ use anyhow;
 use kinode_process_lib::{
     get_blob,
     http::client::{HttpClientAction, OutgoingHttpRequest},
-    println, set_state, LazyLoadBlob, Request, Address,
+    kiprintln, set_state, Address, LazyLoadBlob, Request,
 };
 use serde::Deserialize;
 use serde_json;
@@ -88,13 +88,15 @@ pub fn get_embeddings_for_text(
         kiprintln!("Content to embed: {:?}", content_to_embed);
         kiprintln!("----------------------------------");
         let embedding = get_embedding(content_to_embed, is_query)?;
-        state.embedding_hash_map.insert(unembedded_hash.to_string(), embedding);
+        state
+            .embedding_hash_map
+            .insert(unembedded_hash.to_string(), embedding);
     }
 
     for hash in input_hashes.iter() {
         return_list.push(state.embedding_hash_map.get(hash).unwrap().clone());
     }
-    
+
     match bincode::serialize(&state) {
         Ok(serialized) => set_state(&serialized),
         Err(e) => return Err(format!("Failed to serialize state: {}", e)),

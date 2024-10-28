@@ -1,7 +1,7 @@
 use kinode_process_lib::{
     get_blob,
     http::client::{HttpClientAction, OutgoingHttpRequest},
-    println, LazyLoadBlob, Request,
+    kiprintln, LazyLoadBlob, Request,
 };
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -84,14 +84,17 @@ fn create_user_content(images: Vec<String>, content: &str) -> Vec<Value> {
         "
     })];
 
-    let image_content = images.into_iter().map(|img| {
-        json!({
-            "type": "image_url",
-            "image_url": {
-                "url": img
-            }
+    let image_content = images
+        .into_iter()
+        .map(|img| {
+            json!({
+                "type": "image_url",
+                "image_url": {
+                    "url": img
+                }
+            })
         })
-    }).collect::<Vec<_>>();
+        .collect::<Vec<_>>();
     kiprintln!("----");
     kiprintln!("{:?}", image_content);
     kiprintln!("Text content: {:?}", content);

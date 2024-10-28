@@ -1,5 +1,5 @@
 use crate::kinode::process::tg::{
-    SendMessageParams as WitSendMessageParams, TgRequest, TgResponse, Voice as WitVoice
+    SendMessageParams as WitSendMessageParams, TgRequest, TgResponse, Voice as WitVoice,
 };
 use frankenstein::GetFileParams;
 use frankenstein::MethodResponse;
@@ -9,7 +9,7 @@ use frankenstein::{SendMessageParams, TelegramApi};
 use kinode_process_lib::{
     await_message, call_init, get_blob,
     http::{client::HttpClientAction, client::OutgoingHttpRequest},
-    println, Address, LazyLoadBlob, Message, Request, Response,
+    kiprintln, Address, LazyLoadBlob, Message, Request, Response,
 };
 use std::collections::HashMap;
 

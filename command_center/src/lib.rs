@@ -1,6 +1,6 @@
 use crate::kinode::process::llm::{register_groq_api_key, register_openai_api_key};
 use kinode_process_lib::{
-    await_message, call_init, get_typed_state, println, Address, Message, Response,
+    await_message, call_init, get_typed_state, kiprintln, Address, Message, Response,
 };
 
 const OPENAI_API_KEY: &str = include_str!("../../OPENAI_API_KEY");
@@ -79,9 +79,8 @@ fn handle_get_embeddings_for_texts(
     // let return_list = get_embeddings_for_text(state, texts, is_query, source);
     // TODO: Zena: temp solution
     kiprintln!("CC: Getting embeddings for texts");
-    let return_list: Result<Vec<Vec<f32>>, String> = Ok(texts.iter()
-        .map(|_| vec![0.0; 4096])
-        .collect());
+    let return_list: Result<Vec<Vec<f32>>, String> =
+        Ok(texts.iter().map(|_| vec![0.0; 4096]).collect());
     let response = RecenteredResponse::GetEmbeddingsForTexts(return_list);
     Ok(Response::new()
         .body(serde_json::to_vec(&response)?)
