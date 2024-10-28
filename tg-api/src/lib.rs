@@ -10,7 +10,7 @@ wit_bindgen::generate!({
 
 fn send_tg_request(request: TgRequest) -> anyhow::Result<TgResponse> {
     Request::new()
-        .target(("our", "tg", "command_center", "uncentered.os"))
+        .target(("our", "tg", "command-center", "uncentered.os"))
         .body(request)
         .send_and_await_response(5)??
         .body()

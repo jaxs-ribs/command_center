@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "command_center",
+    "command-center",
     "stt",
-    "stt_api",
+    "stt-api",
     "llm",
-    "llm_api",
+    "llm-api",
     "tg",
-    "tg_api",
+    "tg-api",
 ]
 
 [profile.release]

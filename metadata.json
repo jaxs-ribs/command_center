@@ -1,9 +1,9 @@
 {
-    "name": "command_center",
+    "name": "command-center",
     "description": "",
     "image": "",
     "properties": {
-        "package_name": "command_center",
+        "package_name": "command-center",
         "current_version": "0.1.0",
         "publisher": "uncentered.os",
         "mirrors": [],

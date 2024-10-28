@@ -1,5 +1,5 @@
 [package]
-name = "tg_api"
+name = "stt-api"
 version = "0.1.0"
 edition = "2021"
 

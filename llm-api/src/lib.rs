@@ -13,7 +13,7 @@ wit_bindgen::generate!({
 
 fn _register_openai_api_key(api_key: &str) -> anyhow::Result<String> {
     let LlmResponse::RegisterOpenaiApiKey(Ok(result)) = Request::new()
-        .target(("our", "llm", "command_center", "uncentered.os"))
+        .target(("our", "llm", "command-center", "uncentered.os"))
         .body(LlmRequest::RegisterOpenaiApiKey(api_key.to_string()))
         .send_and_await_response(5)??
         .body()
@@ -28,7 +28,7 @@ fn _register_openai_api_key(api_key: &str) -> anyhow::Result<String> {
 
 fn _register_groq_api_key(api_key: &str) -> anyhow::Result<String> {
     let LlmResponse::RegisterGroqApiKey(Ok(result)) = Request::new()
-        .target(("our", "llm", "command_center", "uncentered.os"))
+        .target(("our", "llm", "command-center", "uncentered.os"))
         .body(LlmRequest::RegisterGroqApiKey(api_key.to_string()))
         .send_and_await_response(5)??
         .body()
@@ -43,7 +43,7 @@ fn _register_groq_api_key(api_key: &str) -> anyhow::Result<String> {
 
 fn _register_claude_api_key(api_key: &str) -> anyhow::Result<String> {
     let LlmResponse::RegisterClaudeApiKey(Ok(result)) = Request::new()
-        .target(("our", "llm", "command_center", "uncentered.os"))
+        .target(("our", "llm", "command-center", "uncentered.os"))
         .body(LlmRequest::RegisterClaudeApiKey(api_key.to_string()))
         .send_and_await_response(5)??
         .body()
@@ -62,7 +62,7 @@ fn _get_embedding(input: Vec<String>, model: Option<&str>) -> anyhow::Result<Vec
         input,
     };
     match Request::new()
-        .target(("our", "llm", "command_center", "uncentered.os"))
+        .target(("our", "llm", "command-center", "uncentered.os"))
         .body(LlmRequest::Embedding(embedding_request))
         .send_and_await_response(20)??
         .body()
@@ -105,7 +105,7 @@ fn _openai_chat(input: &str, model: Option<&str>) -> anyhow::Result<String> {
         user: None,
     };
     let LlmResponse::OpenaiChat(Ok(result)) = Request::new()
-        .target(("our", "llm", "command_center", "uncentered.os"))
+        .target(("our", "llm", "command-center", "uncentered.os"))
         .body(LlmRequest::OpenaiChat(chat_request))
         .send_and_await_response(20)??
         .body()
@@ -143,7 +143,7 @@ fn _groq_chat(input: &str, model: Option<&str>) -> anyhow::Result<String> {
         user: None,
     };
     let LlmResponse::GroqChat(Ok(result)) = Request::new()
-        .target(("our", "llm", "command_center", "uncentered.os"))
+        .target(("our", "llm", "command-center", "uncentered.os"))
         .body(LlmRequest::GroqChat(chat_request))
         .send_and_await_response(20)??
         .body()
@@ -166,7 +166,7 @@ fn _claude_chat(input: &str, model: Option<&str>) -> anyhow::Result<String> {
         max_tokens: Some(512),
     };
     let LlmResponse::ClaudeChat(Ok(result)) = Request::new()
-        .target(("our", "llm", "command_center", "uncentered.os"))
+        .target(("our", "llm", "command-center", "uncentered.os"))
         .body(LlmRequest::ClaudeChat(claude_chat_request))
         .send_and_await_response(20)??
         .body()

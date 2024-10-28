@@ -32,26 +32,26 @@ fn handle_message(our: &Address) -> anyhow::Result<()> {
         input_node_names: node_names,
         ..
     }) = message.body().try_into()?;
-    print_to_terminal(0, "command_center_test: a");
+    print_to_terminal(0, "command-center_test: a");
     assert!(node_names.len() == 1);
 
     let our_echo_address = Address {
         node: our.node.clone(),
-        process: ProcessId::new(Some("command_center"), "command_center", "uncentered.os"),
+        process: ProcessId::new(Some("command-center"), "command-center", "uncentered.os"),
     };
 
     // Send
-    print_to_terminal(0, "command_center_test: b");
+    print_to_terminal(0, "command-center_test: b");
     let response = Request::new()
         .target(our_echo_address)
         .body(serde_json::to_vec("test")?)
         .send_and_await_response(15)?
         .unwrap();
     if response.is_request() {
-        fail!("command_center_test");
+        fail!("command-center_test");
     };
     if serde_json::json!("Ack") != serde_json::from_slice::<serde_json::Value>(response.body())? {
-        fail!("command_center_test");
+        fail!("command-center_test");
     };
 
     Response::new()
@@ -70,9 +70,9 @@ fn init(our: Address) {
         match handle_message(&our) {
             Ok(()) => {}
             Err(e) => {
-                print_to_terminal(0, format!("command_center_test: error: {e:?}").as_str());
+                print_to_terminal(0, format!("command-center_test: error: {e:?}").as_str());
 
-                fail!("command_center_test");
+                fail!("command-center_test");
             }
         };
     }

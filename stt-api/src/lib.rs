@@ -11,7 +11,7 @@ wit_bindgen::generate!({
 // TODO: Zena: Should we activate inherit(true) and explicitly send a response on fail?
 fn register_api_key(key: String) -> anyhow::Result<Result<String, String>> {
     let SttResponse::RegisterApiKey(result) = Request::new()
-        .target(("our", "stt", "command_center", "uncentered.os"))
+        .target(("our", "stt", "command-center", "uncentered.os"))
         .body(SttRequest::RegisterApiKey(key))
         .send_and_await_response(5)??
         .body()
@@ -24,7 +24,7 @@ fn register_api_key(key: String) -> anyhow::Result<Result<String, String>> {
 
 fn openai_transcribe(audio: Vec<u8>) -> anyhow::Result<Result<String, String>> {
     let SttResponse::OpenaiTranscribe(result) = Request::new()
-        .target(("our", "stt", "command_center", "uncentered.os"))
+        .target(("our", "stt", "command-center", "uncentered.os"))
         .body(SttRequest::OpenaiTranscribe(audio))
         .send_and_await_response(5)??
         .body()

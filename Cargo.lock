@@ -802,7 +802,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "command_center"
+name = "command-center"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1595,7 +1595,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "llm_api"
+name = "llm-api"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -2590,7 +2590,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "stt_api"
+name = "stt-api"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -2681,7 +2681,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tg_api"
+name = "tg-api"
 version = "0.1.0"
 dependencies = [
  "anyhow",
