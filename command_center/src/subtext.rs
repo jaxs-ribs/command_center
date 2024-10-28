@@ -37,7 +37,7 @@ fn process_image_urls(img_urls: Vec<String>) -> Vec<String> {
             match get_base_64_img_from_server(url) {
                 Ok(b64_img) => format!("data:image/jpeg;base64,{}", b64_img),
                 Err(e) => {
-                    println!("Failed to fetch image: {}", e);
+                    kiprintln!("Failed to fetch image: {}", e);
                     continue;
                 }
             }
@@ -92,10 +92,10 @@ fn create_user_content(images: Vec<String>, content: &str) -> Vec<Value> {
             }
         })
     }).collect::<Vec<_>>();
-    println!("----");
-    println!("{:?}", image_content);
-    println!("Text content: {:?}", content);
-    println!("----");
+    kiprintln!("----");
+    kiprintln!("{:?}", image_content);
+    kiprintln!("Text content: {:?}", content);
+    kiprintln!("----");
     user_content.extend(image_content);
 
     user_content.push(json!({

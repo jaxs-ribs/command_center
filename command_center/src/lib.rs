@@ -26,6 +26,7 @@ wit_bindgen::generate!({
 });
 
 fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::Result<()> {
+    kiprintln!("CC: Handling request");
     let request: RecenteredRequest = serde_json::from_slice(body)?;
     match request {
         RecenteredRequest::GetEmbeddingsForTexts { texts, is_query } => {
@@ -50,17 +51,17 @@ fn handle_get_subtext(
     _post_uuid: String,
     _stream_uuid: String,
 ) -> anyhow::Result<()> {
-    println!("CC: Getting subtext");
+    kiprintln!("CC: Getting subtext");
     match get_subtext(img_urls, content) {
         Ok(subtext) => {
-            println!("CC: Subtext: {}", subtext);
+            kiprintln!("CC: Subtext: {}", subtext);
             let response = RecenteredResponse::GetSubtext(Ok(subtext));
             Ok(Response::new()
                 .body(serde_json::to_vec(&response)?)
                 .send()?)
         }
         Err(e) => {
-            println!("CC: Error: {}", e);
+            kiprintln!("CC: Error: {}", e);
             let response = RecenteredResponse::GetSubtext(Err(e));
             Ok(Response::new()
                 .body(serde_json::to_vec(&response)?)
@@ -75,7 +76,12 @@ fn handle_get_embeddings_for_texts(
     is_query: bool,
     source: &Address,
 ) -> anyhow::Result<()> {
-    let return_list = get_embeddings_for_text(state, texts, is_query, source);
+    // let return_list = get_embeddings_for_text(state, texts, is_query, source);
+    // TODO: Zena: temp solution
+    kiprintln!("CC: Getting embeddings for texts");
+    let return_list: Result<Vec<Vec<f32>>, String> = Ok(texts.iter()
+        .map(|_| vec![0.0; 4096])
+        .collect());
     let response = RecenteredResponse::GetEmbeddingsForTexts(return_list);
     Ok(Response::new()
         .body(serde_json::to_vec(&response)?)
@@ -103,16 +109,16 @@ fn handle_message(state: &mut State, _our: &Address) -> anyhow::Result<()> {
 
 call_init!(init);
 fn init(our: Address) {
-    println!("Starting command centers embedding engine");
-    println!("{:?}", register_openai_api_key(OPENAI_API_KEY).unwrap());
-    println!("{:?}", register_groq_api_key(GROQ_API_KEY).unwrap());
+    kiprintln!("Starting command centers embedding engine");
+    kiprintln!("{:?}", register_openai_api_key(OPENAI_API_KEY).unwrap());
+    kiprintln!("{:?}", register_groq_api_key(GROQ_API_KEY).unwrap());
 
     let mut state: State =
         get_typed_state(|bytes| bincode::deserialize(bytes).map_err(Box::new)).unwrap_or_default();
 
     loop {
         if let Err(e) = handle_message(&mut state, &our) {
-            println!("Error: {:?}", e);
+            kiprintln!("Error: {:?}", e);
         }
     }
 }

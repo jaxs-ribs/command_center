@@ -142,7 +142,7 @@ fn init(_: Address) {
     loop {
         match handle_message(&mut state) {
             Ok(_) => {}
-            Err(e) => println!("got error while handling message: {e:?}"),
+            Err(e) => kiprintln!("got error while handling message: {e:?}"),
         }
     }
 }

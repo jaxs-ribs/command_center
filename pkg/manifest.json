@@ -1,7 +1,7 @@
 [
     {
-        "process_name": "command_center",
-        "process_wasm_path": "/command_center.wasm",
+        "process_name": "command-center",
+        "process_wasm_path": "/command-center.wasm",
         "on_exit": "None",
         "request_networking": true,
         "request_capabilities": [

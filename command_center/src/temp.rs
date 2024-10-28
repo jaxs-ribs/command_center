@@ -40,7 +40,7 @@ fn handle_message(_our: &Address) -> anyhow::Result<()> {
 
 call_init!(init);
 fn init(our: Address) {
-    println!("Starting command center");
+    kiprintln!("Starting command center");
     let results = [
         ("Groq API key", register_groq_api_key("<KEY>")),
         ("STT API key", register_stt_key("<KEY>")),
@@ -49,12 +49,12 @@ fn init(our: Address) {
     ];
 
     for (name, result) in results {
-        println!("{} registration result: {:?}", name, result);
+        kiprintln!("{} registration result: {:?}", name, result);
     }
 
     loop {
         if let Err(e) = handle_message(&our) {
-            println!("Error: {:?}", e);
+            kiprintln!("Error: {:?}", e);
         }
     }
 }

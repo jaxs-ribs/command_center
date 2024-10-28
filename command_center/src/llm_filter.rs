@@ -21,15 +21,15 @@ pub fn filter_posts(rules: Vec<String>, post_contents: Vec<String>) -> Result<Ve
         Err(e) => return Err(format!("Error in the groq chat: {}", e)),
     };
 
-    println!("The total amount of posts is: {}", post_contents_len);
+    kiprintln!("The total amount of posts is: {}", post_contents_len);
 
-    println!("Groq chat response: {}", res);
-    println!("The length of the response is: {}", res.len());
+    kiprintln!("Groq chat response: {}", res);
+    kiprintln!("The length of the response is: {}", res.len());
 
     // Strip the response of anything that isn't 0 or 1
     let res: String = res.chars().filter(|&c| c == '0' || c == '1').collect();
 
-    println!("Filtered Groq chat response: {}", res);
+    kiprintln!("Filtered Groq chat response: {}", res);
 
     let parsed_result: Vec<bool> = res
         .trim()
@@ -38,7 +38,7 @@ pub fn filter_posts(rules: Vec<String>, post_contents: Vec<String>) -> Result<Ve
             '1' => true,
             '0' => false,
             _ => {
-                println!("Warning: Unexpected character '{}' in response", c);
+                kiprintln!("Warning: Unexpected character '{}' in response", c);
                 false
             }
         })

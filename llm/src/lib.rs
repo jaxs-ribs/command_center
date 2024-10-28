@@ -51,7 +51,7 @@ fn handle_openai_chat_response() -> anyhow::Result<()> {
     let chat_response = match serde_json::from_slice::<ChatResponse>(bytes.bytes.as_slice()) {
         Ok(response) => response,
         Err(e) => {
-            println!(
+            kiprintln!(
                 "Failed to deserialize OpenAI chat response. Raw bytes: {:?}",
                 String::from_utf8_lossy(&bytes.bytes)
             );
@@ -71,7 +71,7 @@ fn handle_groq_chat_response() -> anyhow::Result<()> {
     let chat_response = match serde_json::from_slice::<ChatResponse>(bytes.bytes.as_slice()) {
         Ok(response) => response,
         Err(e) => {
-            println!(
+            kiprintln!(
                 "Failed to deserialize Groq chat response. Raw bytes: {:?}",
                 String::from_utf8_lossy(&bytes.bytes)
             );
@@ -91,7 +91,7 @@ fn handle_chat_image_response() -> anyhow::Result<()> {
     let chat_response = match serde_json::from_slice::<ChatResponse>(bytes.bytes.as_slice()) {
         Ok(response) => response,
         Err(e) => {
-            println!(
+            kiprintln!(
                 "Failed to deserialize chat image response. Raw bytes: {:?}",
                 String::from_utf8_lossy(&bytes.bytes)
             );
@@ -111,7 +111,7 @@ fn handle_claude_chat_response() -> anyhow::Result<()> {
     let chat_response_wrapper = match serde_json::from_slice::<ClaudeChatResponseWrapper>(bytes.bytes.as_slice()) {
         Ok(response) => response,
         Err(e) => {
-            println!(
+            kiprintln!(
                 "Failed to deserialize Claude chat response. Raw bytes: {:?}",
                 String::from_utf8_lossy(&bytes.bytes)
             );
@@ -293,7 +293,7 @@ fn init(_: Address) {
         match handle_message(&mut state) {
             Ok(()) => {}
             Err(e) => {
-                println!("openai_api: error: {:?}", e);
+                kiprintln!("openai_api: error: {:?}", e);
             }
         };
     }

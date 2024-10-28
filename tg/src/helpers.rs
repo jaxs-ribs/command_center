@@ -56,7 +56,7 @@ impl TelegramApi for Api {
         let res = send_request_await_response(Method::GET, url, Some(headers), 30, body)?;  
         let deserialized: T2 = serde_json::from_slice(&res.body())
             .map_err(|e| {
-                println!("Deserialization error: {}", e);
+                kiprintln!("Deserialization error: {}", e);
                 anyhow::anyhow!("Failed to deserialize response body: {}", e)
             })?;
 
