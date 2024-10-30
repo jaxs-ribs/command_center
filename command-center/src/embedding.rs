@@ -56,7 +56,7 @@ fn get_embeddings(texts: &[String], is_query: bool) -> anyhow::Result<Vec<Vec<f3
     let response: EmbeddingResponse = serde_json::from_slice(&blob.bytes.as_slice())?;
 
     // Optionally log the time taken
-    kiprintln!("Embedding time taken: {} seconds", response.time_taken);
+    //kiprintln!("Embedding time taken: {} seconds", response.time_taken);
 
     Ok(response.embeddings)
 }
@@ -67,7 +67,7 @@ pub fn get_embeddings_for_text(
     is_query: bool,
     _source: &Address,
 ) -> Result<Vec<Vec<f32>>, String> {
-    // kiprintln!("Node {:?} is requesting embeddings for {:?} texts ", _source, texts.len());
+    // //kiprintln!("Node {:?} is requesting embeddings for {:?} texts ", _source, texts.len());
     let mut input_hashes = Vec::new();
     let mut unembedded_hashes = Vec::new();
     let mut contents_to_embed = Vec::new();
@@ -85,8 +85,8 @@ pub fn get_embeddings_for_text(
     for (unembedded_hash, content_to_embed) in
         unembedded_hashes.iter().zip(contents_to_embed.iter())
     {
-        kiprintln!("Content to embed: {:?}", content_to_embed);
-        kiprintln!("----------------------------------");
+        //kiprintln!("Content to embed: {:?}", content_to_embed);
+        //kiprintln!("----------------------------------");
         let embedding = get_embedding(content_to_embed, is_query)?;
         state
             .embedding_hash_map
@@ -109,7 +109,7 @@ fn get_embedding(text: &str, is_query: bool) -> Result<Vec<f32>, String> {
     let new_embeddings = match get_embeddings(&[text.to_string()], is_query) {
         Ok(embeddings) => embeddings,
         Err(e) => {
-            kiprintln!("Error obtaining embeddings: {}", e);
+            //kiprintln!("Error obtaining embeddings: {}", e);
             return Err(format!("Failed to get embeddings: {}", e));
         }
     };

@@ -26,7 +26,7 @@ wit_bindgen::generate!({
 });
 
 fn handle_request(state: &mut State, body: &[u8], source: &Address) -> anyhow::Result<()> {
-    kiprintln!("CC: Handling request");
+    //kiprintln!("CC: Handling request");
     let request: RecenteredRequest = serde_json::from_slice(body)?;
     match request {
         RecenteredRequest::GetEmbeddingsForTexts { texts, is_query } => {
@@ -51,17 +51,17 @@ fn handle_get_subtext(
     _post_uuid: String,
     _stream_uuid: String,
 ) -> anyhow::Result<()> {
-    kiprintln!("CC: Getting subtext");
+    //kiprintln!("CC: Getting subtext");
     match get_subtext(img_urls, content) {
         Ok(subtext) => {
-            kiprintln!("CC: Subtext: {}", subtext);
+            //kiprintln!("CC: Subtext: {}", subtext);
             let response = RecenteredResponse::GetSubtext(Ok(subtext));
             Ok(Response::new()
                 .body(serde_json::to_vec(&response)?)
                 .send()?)
         }
         Err(e) => {
-            kiprintln!("CC: Error: {}", e);
+            //kiprintln!("CC: Error: {}", e);
             let response = RecenteredResponse::GetSubtext(Err(e));
             Ok(Response::new()
                 .body(serde_json::to_vec(&response)?)
@@ -78,7 +78,7 @@ fn handle_get_embeddings_for_texts(
 ) -> anyhow::Result<()> {
     // let return_list = get_embeddings_for_text(state, texts, is_query, source);
     // TODO: Zena: temp solution
-    kiprintln!("CC: Getting embeddings for texts");
+    //kiprintln!("CC: Getting embeddings for texts");
     let return_list: Result<Vec<Vec<f32>>, String> =
         Ok(texts.iter().map(|_| vec![0.0; 4096]).collect());
     let response = RecenteredResponse::GetEmbeddingsForTexts(return_list);
@@ -117,7 +117,7 @@ fn init(our: Address) {
 
     loop {
         if let Err(e) = handle_message(&mut state, &our) {
-            kiprintln!("Error: {:?}", e);
+            //kiprintln!("Error: {:?}", e);
         }
     }
 }

@@ -3,7 +3,7 @@ use crate::kinode::process::{
     stt::{openai_transcribe, register_api_key as register_stt_key},
     tg::{get_file, register_token, send_message, subscribe, SendMessageParams, TgRequest},
 };
-use kinode_process_lib::{await_message, call_init, get_blob, kiprintln Address, Message};
+use kinode_process_lib::{await_message, call_init, get_blob, //kiprintln Address, Message};
 
 wit_bindgen::generate!({
     path: "target/wit",
@@ -40,7 +40,7 @@ fn handle_message(_our: &Address) -> anyhow::Result<()> {
 
 call_init!(init);
 fn init(our: Address) {
-    kiprintln!("Starting command center");
+    //kiprintln!("Starting command center");
     let results = [
         ("Groq API key", register_groq_api_key("<KEY>")),
         ("STT API key", register_stt_key("<KEY>")),
@@ -49,12 +49,12 @@ fn init(our: Address) {
     ];
 
     for (name, result) in results {
-        kiprintln!("{} registration result: {:?}", name, result);
+        //kiprintln!("{} registration result: {:?}", name, result);
     }
 
     loop {
         if let Err(e) = handle_message(&our) {
-            kiprintln!("Error: {:?}", e);
+            //kiprintln!("Error: {:?}", e);
         }
     }
 }

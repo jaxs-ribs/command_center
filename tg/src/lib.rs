@@ -211,7 +211,7 @@ fn init(_: Address) {
         match handle_message(&mut state) {
             Ok(()) => {}
             Err(e) => {
-                kiprintln!("tg: error: {:?}", e);
+                //kiprintln!("tg: error: {:?}", e);
             }
         };
     }
